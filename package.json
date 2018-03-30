@@ -1,0 +1,30 @@
+{
+  "name": "hapi-v17",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ./dist/server.js",
+    "start-dev": "\"NODE_ENV=test\" && node ./dist/server.js",
+    "serve": "npm run build && npm start",
+    "build": "echo Using TypeScript && tsc --version && tsc -p . "
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/hapi": "^17.0.7",
+    "boom": "^7.2.0",
+    "hapi": "^17.2.3",
+    "hapi-auth-jwt2": "^8.0.1",
+    "hapi-auto-route": "^1.1.0",
+    "hapi-mongodb": "^7.1.0",
+    "hapi-router": "^4.0.0",
+    "hapi-swagger": "^9.1.1",
+    "inert": "^5.1.0",
+    "mongodb": "^3.0.5",
+    "path": "^0.12.7",
+    "typescript": "^2.7.1",
+    "vision": "^5.3.2"
+  }
+}

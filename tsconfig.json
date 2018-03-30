@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "declaration": false,
+        "target": "es2015",  // Standard ของ javascript
+        "module": "commonjs",
+        "outDir": "./dist", //โฟว์เดอร์ output
+        "sourceMap": true,
+        "preserveConstEnums": true,
+        "removeComments": true,
+        "moduleResolution": "node"
+    },
+    "include": [
+        "src/**/*.ts" //ตำแหน่งไฟล์และโฟเดอร์ที่กำหนดให้ Build
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+  }
