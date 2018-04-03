@@ -22,7 +22,6 @@ module.exports = [
             }
         },
         handler: async (request, reply) => {
-
             try {
                 const mongo = Util.getDb(request)
                 let payload = request.payload
@@ -43,6 +42,7 @@ module.exports = [
         method: 'GET',
         path: '/users',
         config: {
+            auth:false,
             tags: ['api'],
             description: 'Select all user ',
             notes: 'Select all user '

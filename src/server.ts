@@ -8,6 +8,7 @@ import * as inert from 'inert';
 import * as vision from 'vision';
 import * as path from 'path';
 import { Util } from './util';
+const config = require('./config.json')
 const Pack = require('./../package');
 const optionsSwagger = {
     auth: false,
@@ -18,7 +19,7 @@ const optionsSwagger = {
 };
 // Config Mongodb
 const optionsMongo = {
-    url: 'mongodb://localhost:27017',
+    url: 'mongodb://' + config.mongodb.address + ':' + config.mongodb.port,
     settings: {
         poolSize: 10
     },
@@ -28,11 +29,11 @@ const optionsMongo = {
 const optionAutoRoute = { routes: path.join('dist', 'routes', '*.js') };
 // create new server instance
 const server = new Hapi.Server({
-    port: 3000
+    port: config.hapi.port
 })
 // create validate for jwt
 function validate(decoded, request, callback) {
-    return  { isValid: true }
+    return { isValid: true }
 }
 // register plugins, wrapped in async/await
 async function liftOff() {
@@ -48,7 +49,6 @@ async function liftOff() {
             {
                 plugin: vision
             },
-
             {
                 plugin: inert
             },
@@ -67,6 +67,16 @@ async function liftOff() {
             key: Util.jwtKey(),
             validate: validate,
             verifyOptions: { ignoreExpiration: true }
+        });
+        // Event 'request' 
+        await server.events.on('request', (requestL: any, event: any, tags: any) => {
+            if (tags.error) {
+                console.log(`Request ${event.request} error: ${event.error ? event.error.message : 'unknown'}`);
+            }
+        });
+        // Event 'respones'
+        await server.events.on('response', (request: any) => {
+            console.log("IP Address : "+ request.info.remoteAddress + ' | ' + request.method.toUpperCase() + ' ' + request.url.path + ' | Status code : ' + request.response.statusCode + ' | Respond Time : ' + (request.info.responded - request.info.received) + ' ms');
         });
 
         await server.auth.default('jwt');

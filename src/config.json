@@ -1,0 +1,12 @@
+{
+  "path": {
+    "autoRoutes": ["dist","routes","*.js"]
+  },
+  "mongodb": {
+    "port": "27017",
+    "address": "localhost"
+  },
+  "hapi": {
+    "port": "3000"
+  }
+}
