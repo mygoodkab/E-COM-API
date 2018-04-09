@@ -7,7 +7,7 @@ const mongoObjectId = require('mongodb').ObjectId;
 module.exports = [
     {  // Insert user profile
         method: 'POST',
-        path: '/users/insert',
+        path: '/users',
         config: {
             auth: false,
             tags: ['api'],
@@ -64,7 +64,7 @@ module.exports = [
 
         }
     },
-    {  //login
+    {  // Login
         method: 'POST',
         path: '/login',
         config:

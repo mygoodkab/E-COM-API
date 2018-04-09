@@ -5,7 +5,7 @@ import * as JWT from 'jsonwebtoken';
 import { request } from 'http';
 const mongoObjectId = require('mongodb').ObjectId;
 module.exports = [
-    {  // Get Category
+    {  // GET Category
         method: 'GET',
         path: '/category/{id?}',
         config: {
@@ -41,9 +41,9 @@ module.exports = [
             }
         }
     },
-    {  // Insert Category
+    {  // POST Category
         method: 'POST',
-        path: '/category/insert',
+        path: '/category',
         config: {
             auth: false,
             tags: ['api'],
@@ -89,9 +89,9 @@ module.exports = [
 
         }
     },
-    {  // Update Category
-        method: 'POST',
-        path: '/category/update',
+    {  // PUT Category
+        method: 'PUT',
+        path: '/category',
         config: {
             auth: false,
             tags: ['api'],

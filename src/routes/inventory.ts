@@ -6,7 +6,7 @@ import { request } from 'http';
 const config = require('../config.json')
 const mongoObjectId = require('mongodb').ObjectId;
 module.exports = [
-    {  // Get Inventory
+    {  // GET Inventory
         method: 'GET',
         path: '/inventory/{id?}',
         config: {
@@ -27,9 +27,10 @@ module.exports = [
                 let resultInventory = params.id ? await mongo.collection('inventory').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('inventory').find().toArray()
                 //ถ้ามี paramter id ข้อมูลที่ res จะเป็นแบบ Object สามารถ Assign ค่าได้เลยได้เลย
                 //ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id
-                
+
                 if (params.id) {
                     resultInventory.masterInfo = await mongo.collection('master').findOne({ _id: mongoObjectId(resultInventory.masterId) });
+                    resultInventory.inventoryLog = await mongo.collection('inventory-log').find({ inventoryId: resultInventory._id.toString() }).toArray()
                 }
                 //ถ้าข้อมูลไม่มี paramter id ข้อมูล res ที่ได้จะเป็นแบบ Array จะต้อง loop เพื่อ Assign ค่าที่ละตำแหน่ง
                 //ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id 
@@ -49,7 +50,7 @@ module.exports = [
             }
         }
     },
-    {  // Import/Export Item
+    {  // POST Import/Export Item
         method: 'POST',
         path: '/inventory/import-export',
         config: {
@@ -70,6 +71,7 @@ module.exports = [
             try {
                 const mongo = Util.getDb(request)
                 let payload = request.payload
+
                 // Create LOG
                 let log = Object.assign({}, payload)
                 log.metadata = payload.masterObject
@@ -123,7 +125,7 @@ module.exports = [
             }
         }
     },
-    {  // Adjust
+    {  // POST Adjust
         method: 'POST',
         path: '/inventory/adjust',
         config: {
@@ -167,6 +169,63 @@ module.exports = [
                 return (Boom.badGateway(error))
             }
         }
+    },
+    {  // GET Inventory
+        method: 'GET',
+        path: '/inventory/log',
+        config: {
+            auth: false,
+            tags: ['api'],
+            description: 'Get Inventory-Log-query-params',
+            validate: {
+                query: {
+                    begin: Joi.number().integer().min(0).optional().description('begin datetime in unix timestamp'),
+                    end: Joi.number().integer().min(0).optional().description('end datetime in unix timestamp'),
+                    sort: Joi.number().integer().valid([1, -1]).optional().description('1 for asc & -1 for desc'),
+                    limit: Joi.number().integer().min(1).optional().description('number of data to be shown')
+                },
+                options: {
+                    allowUnknown: true
+                }
+            }
+        },
+        handler: async (request, reply) => {
+            try {
+                const db = Util.getDb(request)
+                let payload = request.query
+                let options: any = { query: {}, sort: {}, limit: 0 }
+
+                for (const key in payload) {
+                    switch (key) {
+                        case 'begin':
+                        case 'end':
+                            if (options.query.timestamp == undefined) options.query.timestamp = {}
+                            options.query.timestamp[key] = key == 'begin' ? { $gte: payload[key] } : { $lte: payload[key] }
+                            break;
+                        case 'sort':
+                            options.sort = payload[key]
+                            break;
+                        case 'limit':
+                            options.limit = payload[key]
+                            break;
+                        default:
+                            options.query[key] = payload[key]
+                            break;
+                    }
+                }
+
+                let inventoryLogs = await db.collection('inventory-log').find(options.query).sort(options.sort).limit(options.limit).toArray()
+
+                return {
+                    statusCode: 200,
+                    message: "OK",
+                    data: inventoryLogs
+                }
+            } catch (error) {
+                console.error(error)
+                return Boom.badGateway(error.message, error.data)
+            }
+        }
     }
-  
+
 ]

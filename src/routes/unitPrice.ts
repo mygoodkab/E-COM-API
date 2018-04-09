@@ -5,7 +5,7 @@ import * as JWT from 'jsonwebtoken';
 import { request } from 'http';
 const mongoObjectId = require('mongodb').ObjectId;
 module.exports = [
-    {  // Get Unit Price
+    {  // GET Unit Price
         method: 'GET',
         path: '/unitPrice/{id?}',
         config: {
@@ -21,7 +21,13 @@ module.exports = [
             try {
                 const mongo = Util.getDb(request)
                 let params = request.params
+
+                // Get unitPrice Info
                 let res = params.id ? await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('unitPrice').find({ isUse: true }).toArray()
+
+                // Get unitPrice Log
+                params.id ? res.unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res._id.toString() }).toArray() : "";
+
                 return {
                     statusCode: 200,
                     message: "OK",
@@ -33,9 +39,9 @@ module.exports = [
             }
         }
     },
-    {  // Insert Unit Price
+    {  // POST Unit Price
         method: 'POST',
-        path: '/unitPrice/insert',
+        path: '/unitPrice',
         config: {
             auth: false,
             tags: ['api'],
@@ -81,9 +87,9 @@ module.exports = [
 
         }
     },
-    {  // Update unitPrice
-        method: 'POST',
-        path: '/unitPrice/update',
+    {  // PUT unitPrice
+        method: 'PUT',
+        path: '/unitPrice',
         config: {
             auth: false,
             tags: ['api'],

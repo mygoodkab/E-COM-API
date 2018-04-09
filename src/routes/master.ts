@@ -5,7 +5,7 @@ import * as JWT from 'jsonwebtoken';
 import { request } from 'http';
 const mongoObjectId = require('mongodb').ObjectId;
 module.exports = [
-    {  // Get All/By ID Master
+    {  // GET All/By ID Master
         method: 'GET',
         path: '/master/{id?}',
         config: {
@@ -35,6 +35,7 @@ module.exports = [
                     resultMaster.unitPriceInfo = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(resultMaster.unitPriceId) })
                     resultMaster.categoryInfo = await mongo.collection('category').findOne({ _id: mongoObjectId(resultMaster.categoryId) })
                     resultMaster.userInfo = await mongo.collection('users').findOne({ _id: mongoObjectId(resultMaster.userId) })
+                    resultMaster.masterLog  = await mongo.collection('master-log').find({ masterId: resultMaster._id.toString() }).toArray()
                 }
                 //ถ้าข้อมูลไม่มี paramter id ข้อมูล res ที่ได้จะเป็นแบบ Array จะต้อง loop เพื่อ Assign ค่าที่ละตำแหน่ง
                 //ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id
@@ -57,9 +58,9 @@ module.exports = [
             }
         }
     },
-    {  // Insert Master
+    {  // POST Master
         method: 'POST',
-        path: '/master/insert',
+        path: '/master',
         config: {
             auth: false,
             tags: ['api'],
@@ -113,9 +114,9 @@ module.exports = [
 
         }
     },
-    {  // Update Master
-        method: 'POST',
-        path: '/master/update',
+    {  // PUT Master
+        method: 'PUT',
+        path: '/master',
         config: {
             auth: false,
             tags: ['api'],
