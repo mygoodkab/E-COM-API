@@ -8,5 +8,10 @@
   },
   "hapi": {
     "port": "3000"
+  },
+  "inventory":{
+    "status":{
+      "IN_STOCK": "In Stock"
+    }
   }
 }

@@ -5,7 +5,7 @@ import * as JWT from 'jsonwebtoken';
 import { request } from 'http';
 const mongoObjectId = require('mongodb').ObjectId;
 module.exports = [
-    {  // Get Master
+    {  // Get All/By ID Master
         method: 'GET',
         path: '/master/{id?}',
         config: {
@@ -22,9 +22,12 @@ module.exports = [
                 const mongo = Util.getDb(request)
 
                 let params = request.params
-                let res: any = "";
-
+                //ถ้ามี parameter id ให้ค้นหาข้อมูลตาม id
+                let resultMaster: any = params.id ? await mongo.collection('master').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('master').find().toArray()
+                //ถ้ามี paramter id ข้อมูลที่ res จะเป็นแบบ Object สามารถ Assign ค่าได้เลยได้เลย
+                //ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id
                 if (params.id) {
+<<<<<<< HEAD
                     res = await mongo.collection('master').findOne({ _id: mongoObjectId(params.id) })
 
                     res.unitId = await mongo.collection('unit').findOne({ id: mongoObjectId(res.unitId) })
@@ -39,12 +42,27 @@ module.exports = [
                         res[index].categoryId = await mongo.collection('category').findOne({ id: mongoObjectId(res.categoryId[index]) })
                         res[index].userId = await mongo.collection('user').findOne({ id: mongoObjectId(res.userId[index]) })
                     }
+=======
+                    resultMaster.unitInfo = await mongo.collection('unit').findOne({ id: mongoObjectId(resultMaster.unitId) })
+                    resultMaster.unitPriceInfo = await mongo.collection('unitPrice').findOne({ id: mongoObjectId(resultMaster.unitPriceId) })
+                    resultMaster.categoryInfo = await mongo.collection('category').findOne({ id: mongoObjectId(resultMaster.categoryId) })
+                    resultMaster.userInfo = await mongo.collection('user').findOne({ id: mongoObjectId(resultMaster.userId) })
+>>>>>>> 6d0f3ed2d32384d943fd2ed4b32ee268c2fda127
                 }
-
+                //ถ้าข้อมูลไม่มี paramter id ข้อมูล res ที่ได้จะเป็นแบบ Array จะต้อง loop เพื่อ Assign ค่าที่ละตำแหน่ง
+                //ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id
+                else {
+                    for (let index in resultMaster) {
+                        resultMaster[index].unitInfo = await mongo.collection('unit').findOne({ id: mongoObjectId(resultMaster[index].unitId) })
+                        resultMaster[index].unitPriceInfo = await mongo.collection('unitPrice').findOne({ id: mongoObjectId(resultMaster[index].unitPriceId) })
+                        resultMaster[index].categoryInfo = await mongo.collection('category').findOne({ id: mongoObjectId(resultMaster[index].categoryId) })
+                        resultMaster[index].userInfo = await mongo.collection('user').findOne({ id: mongoObjectId(resultMaster[index].userId) })
+                    }
+                }   
                 return {
                     statusCode: 200,
                     message: "OK",
-                    data: res
+                    data: resultMaster
                 }
             } catch (error) {
                 console.log(error)
@@ -66,21 +84,23 @@ module.exports = [
                     masterDesc: Joi.any(),
                     masterPrice: Joi.any(),
                     masterCost: Joi.any(),
-                    masterBarCode: Joi.any(),
-                    masterDateCreate: Joi.any(),
-                    unitPriceId: Joi.any(),
-                    unitId: Joi.any(),
-                    imageMasterId: Joi.any(),
-                    userId: Joi.any(),
-                    categoryId: Joi.any(),
+                    masterBarcode: Joi.any(),
+                    unitPriceId: Joi.any().required(),
+                    unitId: Joi.any().required(),
+                    imageMasterId: Joi.any().required(),
+                    userId: Joi.any().required(),
+                    categoryId: Joi.any().required(),
                 }
             }
         },
         handler: async (request, reply) => {
             try {
                 const mongo = Util.getDb(request)
+
                 let payload = request.payload
+                //บันทึกวันเวลาที่บันทึก
                 payload.masterDateCreate = Date.now()
+                //เพิ่มข้อมูลลงฐานข้อมูล
                 let insert = await mongo.collection('master').insert(payload)
                 return ({
                     statusCode: 200,
