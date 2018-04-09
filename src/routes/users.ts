@@ -25,8 +25,10 @@ module.exports = [
             try {
                 const mongo = Util.getDb(request)
                 let payload = request.payload
+                //วันเวลาที่สร้าง
                 payload.password = Util.hash(payload.password)
-                console.log(payload)
+                //สถานะการใช้งาน
+                payload.isUse = true
                 let insert = await mongo.collection('users').insert(payload)
                 return ({
                     statusCode: 200,
@@ -42,7 +44,7 @@ module.exports = [
         method: 'GET',
         path: '/users',
         config: {
-            auth:false,
+            auth: false,
             tags: ['api'],
             description: 'Select all user ',
             notes: 'Select all user '
@@ -50,7 +52,7 @@ module.exports = [
         handler: async (request, reply) => {
             const mongo = Util.getDb(request)
             try {
-                let select = await mongo.collection('users').find().toArray()
+                let select = await mongo.collection('users').find({ isUse: true }).toArray()
                 return ({
                     statusCode: 200,
                     msg: "OK",
@@ -83,7 +85,7 @@ module.exports = [
             let payload = request.payload
             payload.password = Util.hash(payload.password)
             try {
-                const login = await mongo.collection('users').findOne({ username: payload.username, password: payload.password })
+                const login = await mongo.collection('users').findOne({ username: payload.username, password: payload.password, isUse: true })
                 if (login) {
                     delete login.password
                     const token = JWT.sign(login, Util.jwtKey())

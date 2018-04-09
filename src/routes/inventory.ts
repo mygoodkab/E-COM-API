@@ -24,10 +24,11 @@ module.exports = [
 
                 let params = request.params
                 //ถ้ามี parameter id ให้ค้นหาข้อมูลตาม id
-                let resultInventory = params.id ? await mongo.collection('inventory').find({ _id: mongoObjectId(params.id) }) : await mongo.collection('inventory').find().toArray()
+                let resultInventory = params.id ? await mongo.collection('inventory').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('inventory').find().toArray()
                 //ถ้ามี paramter id ข้อมูลที่ res จะเป็นแบบ Object สามารถ Assign ค่าได้เลยได้เลย
                 //ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id
-                if (resultInventory.id) {
+                
+                if (params.id) {
                     resultInventory.masterInfo = await mongo.collection('master').findOne({ _id: mongoObjectId(resultInventory.masterId) });
                 }
                 //ถ้าข้อมูลไม่มี paramter id ข้อมูล res ที่ได้จะเป็นแบบ Array จะต้อง loop เพื่อ Assign ค่าที่ละตำแหน่ง
@@ -59,7 +60,10 @@ module.exports = [
                 payload: {
                     userId: Joi.any().required(),
                     method: Joi.string().required(),
-                    masterObject: Joi.array().required(),
+                    masterObject: Joi.array().items([{
+                        masterBarcode: Joi.string().required(),
+                        amount: Joi.number().integer().required()
+                    }]).required()
                 }
             }
         }, handler: async (request, reply) => {
@@ -67,7 +71,7 @@ module.exports = [
                 const mongo = Util.getDb(request)
                 let payload = request.payload
                 // Create LOG
-                let log = Object.assign({},payload)
+                let log = Object.assign({}, payload)
                 log.metadata = payload.masterObject
                 log.timestamp = Date.now()
                 delete log.masterObject
@@ -139,9 +143,9 @@ module.exports = [
 
                 let payload = request.payload
                 // Create log info
-                let log = Object.assign({},payload)
+                let log = Object.assign({}, payload)
                 log.metadata = {
-                    inventoryId : payload.inventoryId,
+                    inventoryId: payload.inventoryId,
                     amount: payload.amount
                 }
                 log.method = 'adjust'
@@ -164,4 +168,5 @@ module.exports = [
             }
         }
     }
+  
 ]

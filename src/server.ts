@@ -29,7 +29,10 @@ const optionsMongo = {
 const optionAutoRoute = { routes: path.join('dist', 'routes', '*.js') };
 // create new server instance
 const server = new Hapi.Server({
-    port: config.hapi.port
+    port: config.hapi.port,
+    routes: {
+        cors: true
+    }
 })
 // create validate for jwt
 function validate(decoded, request, callback) {

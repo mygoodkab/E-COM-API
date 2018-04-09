@@ -1,5 +1,5 @@
 import { Db } from 'mongodb';
-import  * as pathSep  from 'path';
+import * as pathSep from 'path';
 import * as crypto from 'crypto';
 
 export class Util {
@@ -20,7 +20,17 @@ export class Util {
 		let key = hash.digest('hex');
 		return key;
 	}
-	static jwtKey(){
+	static jwtKey() {
 		return "xxxxx"
+	}
+	static async writeLog(request, payload, collection, method) {
+		try {
+			const mongo = Util.getDb(request)
+			payload.method = method
+			let insertlog = await mongo.collection(collection).insert(payload)
+		} catch (error) {
+			console.log(error)
+			return false
+		}
 	}
 }
