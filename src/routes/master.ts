@@ -26,6 +26,7 @@ module.exports = [
 
                 if (params.id) {
                     res = await mongo.collection('master').findOne({ _id: mongoObjectId(params.id) })
+
                     res.unitId = await mongo.collection('unit').findOne({ id: mongoObjectId(res.unitId) })
                     res.unitPriceId = await mongo.collection('unitPrice').findOne({ id: mongoObjectId(res.unitPriceId) })
                     res.categoryId = await mongo.collection('category').findOne({ id: mongoObjectId(res.categoryId) })
