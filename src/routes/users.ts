@@ -102,7 +102,7 @@ module.exports = [
                 if (login) {
                     delete login.password;
                     // login.iat = new Date().getTime();
-                    const token = JWT.sign(login, Util.jwtKey(), { expiresIn: '1m' });
+                    const token = JWT.sign(login, Util.jwtKey(), { expiresIn: '8h' });
                     return ({
                         data: token,
                         message: 'Login success',
