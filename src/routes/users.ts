@@ -1,8 +1,10 @@
-import * as  Boom from 'boom'
-import { Util } from '../util';
-import * as Joi from 'joi'
+import * as  Boom from 'boom';
+import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
-const mongoObjectId = require('mongodb').ObjectId;
+import { ObjectId } from 'mongodb';
+import { Util } from '../util';
+
+const mongoObjectId = ObjectId;
 
 module.exports = [
     {  // Insert user profile
@@ -10,98 +12,109 @@ module.exports = [
         path: '/users',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Insert user data',
             notes: 'Insert user data',
+            tags: ['api'],
             validate: {
                 payload: {
-                    username: Joi.string().required(),
-                    password: Joi.string().required(),
-                    type: Joi.string()
-                }
+                    username: Joi.string().min(1).max(20).regex(/^[a-zA-Z0-9_.-]+/).required(),
+                    password: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9]+/).required()
+                        .description('password'),
+                    type: Joi.string().valid(['admin', 'super-adim', 'staff']),
+                },
+            },
+        },
+        handler: async (req, reply) => {
+            try {
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
+                // วันเวลาที่สร้าง
+                payload.password = Util.hash(payload.password);
+                // สถานะการใช้งาน
+                payload.isUse = true;
+                const insert = await mongo.collection('users').insert(payload);
+                return ({
+                    msg: 'OK',
+                    statusCode: 200,
+                });
+            } catch (error) {
+                return (Boom.badGateway(error));
             }
         },
-        handler: async (request, reply) => {
-            try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
-                //วันเวลาที่สร้าง
-                payload.password = Util.hash(payload.password)
-                //สถานะการใช้งาน
-                payload.isUse = true
-                let insert = await mongo.collection('users').insert(payload)
-                return ({
-                    statusCode: 200,
-                    msg: "OK"
-                })
-            } catch (error) {
-                return (Boom.badGateway(error))
-            }
 
-        }
     },
     {  // Select all user
         method: 'GET',
-        path: '/users',
+        path: '/users/{id?}',
         config: {
-            auth: false,
-            tags: ['api'],
             description: 'Select all user ',
-            notes: 'Select all user '
-        },
-        handler: async (request, reply) => {
-            const mongo = Util.getDb(request)
+            notes: 'Select all user ',
+            tags: ['api'],
+            validate: {
+                params: {
+                    id: Joi.string().optional().description('id user'),
+                },
+            },
+        }, handler: async (req, reply) => {
             try {
-                let select = await mongo.collection('users').find({ isUse: true }).toArray()
-                return ({
-                    statusCode: 200,
-                    msg: "OK",
-                    data: select
-                })
-            } catch (error) {
-                return (Boom.badGateway(error))
-            }
+                const mongo = Util.getDb(req);
+                const params = req.params;
 
-        }
+                // Get info
+                if (params.id === '{id}') { delete params.id; }
+                const res = params.id
+                    ? await mongo.collection('users').findOne({ _id: mongoObjectId(params.id) })
+                    : await mongo.collection('users').find({ isUse: true }).toArray();
+
+                return ({
+                    data: res,
+                    msg: 'OK',
+                    statusCode: 200,
+                });
+
+            } catch (error) {
+                return (Boom.badGateway(error));
+            }
+        },
+
     },
     {  // Login
         method: 'POST',
         path: '/login',
-        config:
-            {
-                auth: false,
-                tags: ['api'],
-                description: 'Check login',
-                notes: 'Check login',
-                validate: {
-                    payload: {
-                        username: Joi.string().required(),
-                        password: Joi.string().required(),
-                    }
-                }
+        config: {
+            auth: false,
+            description: 'Check login',
+            notes: 'Check login',
+            tags: ['api'],
+            validate: {
+                payload: {
+                    password: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9]+/).required().description('password'),
+                    username: Joi.string().min(1).max(20).regex(/^[a-zA-Z0-9_.-]+/).required(),
+                },
             },
-        handler: async (request, reply) => {
-            let mongo = Util.getDb(request)
-            let payload = request.payload
-            payload.password = Util.hash(payload.password)
+        },
+        handler: async (req, reply) => {
+            const mongo = Util.getDb(req);
+            const payload = req.payload;
+            payload.password = Util.hash(payload.password);
             try {
-                const login = await mongo.collection('users').findOne({ username: payload.username, password: payload.password, isUse: true })
+                const login = await mongo.collection('users').findOne({ username: payload.username, password: payload.password, isUse: true });
                 if (login) {
-                    delete login.password
-                    const token = JWT.sign(login, Util.jwtKey())
+                    delete login.password;
+                    // login.iat = new Date().getTime();
+                    const token = JWT.sign(login, Util.jwtKey(), { expiresIn: '1m' });
                     return ({
+                        data: token,
+                        message: 'Login success',
                         statusCode: 200,
-                        message: "Login success",
-                        data: login,
-                        token: JWT.sign(login, Util.jwtKey())
-                    })
+                    });
                 } else {
-                    return (Boom.notFound("Invaild username or password"))
+                    return (Boom.notFound('Invaild username or password'));
                 }
             } catch (error) {
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
+        },
 
-        }
-    }
-] 
+    },
+];

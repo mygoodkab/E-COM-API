@@ -1,141 +1,153 @@
-import * as  Boom from 'boom'
-import { Util } from '../util';
-import * as Joi from 'joi'
+import * as  Boom from 'boom';
+import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
-import { request } from 'http';
-const mongoObjectId = require('mongodb').ObjectId;
+import { ObjectId } from 'mongodb';
+import { Util } from '../util';
+
+const mongoObjectId = ObjectId;
+
 module.exports = [
     {  // GET Unit
         method: 'GET',
         path: '/unit/{id?}',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Get Inventory',
+            tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.any()
-                }
-            }
-        }, handler: async (request, reply) => {
+                    id: Joi.string().length(24).optional().description('id unit'),
+                },
+            },
+        }, handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let params = request.params
+                const mongo = Util.getDb(req);
+                const params = req.params;
 
                 // GET  Unit Info
-                let res = params.id ? await mongo.collection('unit').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('unit').find({ isUse: true }).toArray()
-
+                let res;
                 // GET log
-                params.id ? res.unitLog = await mongo.collection('unit-log').find({ unitId: res._id.toString() }).toArray() : "";
-
-                return {
-                    statusCode: 200,
-                    message: "OK",
-                    data: res
+                if (params.id === '{id}') { delete params.id; }
+                if (params.id) {
+                    res = await mongo.collection('unit').findOne({ _id: mongoObjectId(params.id) });
+                    res.unitLog = await mongo.collection('unit-log').find({ unitId: res._id.toString() }).toArray();
+                } else {
+                    await mongo.collection('unit').find({ isUse: true }).toArray();
                 }
 
+                return {
+                    data: res,
+                    message: 'OK',
+                    statusCode: 200,
+                };
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
-        }
+        },
+
     },
     {  // POST Unit
         method: 'POST',
         path: '/unit',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Insert unit ',
             notes: 'Insert unit ',
+            tags: ['api'],
             validate: {
                 payload: {
-                    unitName: Joi.any(),
-                    unitDateCreate: Joi.any(),
-                    userId: Joi.any(),
-                }
-            }
+                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                        .description('Unit name'),
+                    userId: Joi.string().length(24).required().description('id user'),
+                },
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
 
-                //วันเวลาที่สร้าง
-                payload.unitDateCreate = Date.now()
+                // Create Date
+                payload.crt = Date.now();
 
-                //สถานะการใช้งาน
-                payload.isUse = true
-                let insert = await mongo.collection('unit').insert(payload)
+                // Status's using
+                payload.isUse = true;
+                const insert = await mongo.collection('unit')
+                    .insert(payload);
 
                 // Get latsest ID
-                let latestInsert = await mongo.collection('unit').find({}).sort({ _id: -1 }).limit(1).toArray();
+                const latestInsert = await mongo.collection('unit')
+                    .find({}).sort({ _id: -1 }).limit(1).toArray();
 
                 // Create & Insert unit-Log
-                let log = Object.assign({}, payload)
-                log.unitId = latestInsert[0]._id.toString()
-                Util.writeLog(request, log, 'unit-log', 'Insert')
+                const log = Object.assign({}, payload);
+                log.unitId = latestInsert[0]._id.toString();
+                Util.writeLog(req, log, 'unit-log', 'insert');
 
                 return ({
+                    massage: 'OK',
                     statusCode: 200,
-                    massage: "OK"
-                })
+                });
 
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
 
-        }
+        },
+
     },
     {  // PUT unit
         method: 'PUT',
         path: '/unit',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Insert unit ',
             notes: 'Insert unit ',
+            tags: ['api'],
             validate: {
                 payload: {
-                    unitId: Joi.any().required(),
-                    unitName: Joi.any(),
-                    userId: Joi.any().required(),
-                }
-            }
+                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                        .description('unit name'),
+                    unitId: Joi.string().length(24).required().description('id unit'),
+                    userId: Joi.string().length(24).required().description('id user'),
+                },
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
 
                 // Check No Data
-                let res = await mongo.collection('unit').findOne({ _id: mongoObjectId(payload.unitId) })
+                const res = await mongo.collection('unit')
+                    .findOne({ _id: mongoObjectId(payload.unitId) });
+
                 if (!res) {
-                    return (Boom.badData(`Can't find ID ${payload.unitId}`))
+                    return (Boom.badData(`Can't find ID ${payload.unitId}`));
                 }
 
                 // Create Update Info & Update unit
-                let updateInfo = {
-                    unitName: payload.unitName,
-                    unitLatestUpdate: Date.now()
-                }
-                let update = await mongo.collection('unit').update({ _id: mongoObjectId(payload.unitId) }, { $set: updateInfo })
+                const updateInfo = {
+                    mdt: Date.now(),
+                    name: payload.name,
+                };
+
+                const update = await mongo.collection('unit')
+                    .update({ _id: mongoObjectId(payload.unitId) }, { $set: updateInfo });
 
                 // Create & Insert unit-Log
-                Util.writeLog(request, payload, 'unit-log', 'Update')
+                const writeLog = await Util.writeLog(req, payload, 'unit-log', 'update');
 
-                // Return 200
                 return ({
+                    massage: 'OK',
                     statusCode: 200,
-                    massage: "OK"
-                })
+                });
 
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
 
-        }
-    }
-]
+        },
+
+    },
+];

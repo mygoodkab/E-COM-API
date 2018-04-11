@@ -1,142 +1,149 @@
-import * as  Boom from 'boom'
-import { Util } from '../util';
-import * as Joi from 'joi'
+import * as  Boom from 'boom';
+import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
-import { request } from 'http';
-const mongoObjectId = require('mongodb').ObjectId;
+import { ObjectId } from 'mongodb';
+import { Util } from '../util';
+const mongoObjectId = ObjectId;
+// tslint:disable:max-line-length
 module.exports = [
     {  // GET Category
         method: 'GET',
         path: '/category/{id?}',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Get Inventory',
+            tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.any()
-                }
-            }
-        }, handler: async (request, reply) => {
+                    id: Joi.string().length(24).optional().description('id category'),
+                },
+            },
+        }, handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let params = request.params
+                const mongo = Util.getDb(req);
+                const params = req.params;
 
-                // Get Cateogory Info
-                let res = params.id ? await mongo.collection('category').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('category').find({isUse:true}).toArray()
-
-                // Get log
-                params.id ? res.categoryLog = await mongo.collection('category-log').find({ categoryId: res._id.toString() }).toArray() : "";
-
-                //Return 200
-                return {
-                    statusCode: 200,
-                    message: "OK",
-                    data: res
+                // Get Info & log
+                let res;
+                if (params.id === '{id}') { delete params.id; }
+                if (params.id) {
+                    res = await mongo.collection('category').findOne({ _id: mongoObjectId(params.id) });
+                    res.categoryLog = await mongo.collection('category-log')
+                        .find({ categoryId: res._id.toString() }).toArray();
+                } else {
+                    await mongo.collection('category').find({ isUse: true }).toArray();
                 }
+
+                // Return 200
+                return {
+                    data: res,
+                    message: 'OK',
+                    statusCode: 200,
+                };
 
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
-        }
+        },
+
     },
     {  // POST Category
         method: 'POST',
         path: '/category',
         config: {
             auth: false,
+            description: 'Insert Category ',
+            notes: 'Insert Category',
             tags: ['api'],
-            description: 'Insert Master ',
-            notes: 'Insert Master ',
             validate: {
                 payload: {
-                    categoryName: Joi.any(),
-                    categoryDateCreate: Joi.any(),
-                    userId: Joi.any(),
-                }
-            }
+                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional().description('Category name'),
+                    userId: Joi.string().length(24).required().description('id user'),
+                },
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
 
                 // Create Info & Insert Category
-                let insertInfo = Object.assign({}, payload)
-                delete insertInfo.userId
-                insertInfo.categoryDateCreate = Date.now()
-                insertInfo.isUse = true
-                let insert = await mongo.collection('category').insert(insertInfo)
+                const insertInfo = Object.assign({}, payload);
+                delete insertInfo.userId;
+                insertInfo.crt = Date.now();
+                insertInfo.isUse = true;
+                const insert = await mongo.collection('category').insert(insertInfo);
 
                 // Get latsest ID
-                let latestInsert = await mongo.collection('category').find({}).sort({ _id: -1 }).limit(1).toArray();
+                const latestInsert = await mongo.collection('category').find({}).sort({ _id: -1 }).limit(1).toArray();
 
                 // Create & Insert Category-Log
-                let log = Object.assign({}, payload)
-                log.categoryId = latestInsert[0]._id.toString()
-                Util.writeLog(request, log, 'category-log', 'Insert')
+                const log = Object.assign({}, payload);
+                log.categoryId = latestInsert[0]._id.toString();
+                const writeLog = await Util.writeLog(req, log, 'category-log', 'insert');
 
                 return ({
+                    massage: 'OK',
                     statusCode: 200,
-                    massage: "OK"
-                })
+                });
 
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
 
-        }
+        },
+
     },
     {  // PUT Category
         method: 'PUT',
         path: '/category',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Insert Master ',
             notes: 'Insert Master ',
+            tags: ['api'],
             validate: {
                 payload: {
-                    categoryId: Joi.any().required(),
-                    categoryName: Joi.any(),
-                    userId: Joi.any().required(),
-                }
-            }
+                    categoryId: Joi.string().length(24).required().description('id category'),
+                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                        .description('Category name'),
+                    userId: Joi.string().length(24).required().description('id user'),
+                },
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
 
                 // Check No Data
-                let res = await mongo.collection('category').findOne({ _id: mongoObjectId(payload.categoryId) })
+                const res = await mongo.collection('category').findOne({ _id: mongoObjectId(payload.categoryId) });
                 if (!res) {
-                    return (Boom.badData(`Can't find ID ${payload.categoryId}`))
+                    return (Boom.badData(`Can't find ID ${payload.categoryId}`));
                 }
 
                 // Create Update Info & Update Category
-                let updateInfo = {
-                    categoryName: payload.categoryName,
-                    categoryLatestUpdate: Date.now()
-                }
-                let update = await mongo.collection('category').update({ _id: mongoObjectId(payload.categoryId) }, { $set: updateInfo })
+                const updateInfo = {
+                    mdt: Date.now(),
+                    name: payload.name,
+                };
+                const update = await mongo.collection('category')
+                    .update({ _id: mongoObjectId(payload.categoryId) }, { $set: updateInfo });
 
                 // Create & Insert Category-Log
-                Util.writeLog(request, payload, 'category-log', 'Update')
+                const writeLog = await Util.writeLog(req, payload, 'category-log', 'update');
 
                 // Return 200
                 return ({
+                    massage: 'OK',
                     statusCode: 200,
-                    massage: "OK"
-                })
+                });
 
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
 
-        }
-    }
-]
+        },
+
+    },
+];

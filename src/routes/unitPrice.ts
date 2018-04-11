@@ -1,140 +1,147 @@
-import * as  Boom from 'boom'
-import { Util } from '../util';
-import * as Joi from 'joi'
+import * as  Boom from 'boom';
+import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
-import { request } from 'http';
-const mongoObjectId = require('mongodb').ObjectId;
+import { ObjectId } from 'mongodb';
+import { Util } from '../util';
+const mongoObjectId = ObjectId;
+
 module.exports = [
     {  // GET Unit Price
         method: 'GET',
         path: '/unitPrice/{id?}',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Get unitPrice',
+            tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.any()
-                }
-            }
-        }, handler: async (request, reply) => {
+                    id: Joi.string().length(24).optional().description('id unit price'),
+                },
+            },
+        }, handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let params = request.params
+                const mongo = Util.getDb(req);
+                const params = req.params;
 
-                // Get unitPrice Info
-                let res = params.id ? await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(params.id) }) : await mongo.collection('unitPrice').find({ isUse: true }).toArray()
-
-                // Get unitPrice Log
-                params.id ? res.unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res._id.toString() }).toArray() : "";
+                // Get unitPrice Info & Log
+                let res;
+                if (params.id === '{id}') { delete params.id; }
+                if (params.id) {
+                    res = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(params.id) });
+                    res.unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res._id.toString() }).toArray();
+                } else {
+                    await mongo.collection('unitPrice').find({ isUse: true }).toArray();
+                }
 
                 return {
+                    data: res,
+                    message: 'OK',
                     statusCode: 200,
-                    message: "OK",
-                    data: res
-                }
+                };
+
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
-        }
+        },
+
     },
     {  // POST Unit Price
         method: 'POST',
         path: '/unitPrice',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Insert unitPrice ',
             notes: 'Insert unitPrice ',
+            tags: ['api'],
             validate: {
                 payload: {
-                    unitPriceName: Joi.any(),
-                    unitPriceDateCreate: Joi.any(),
-                    userId: Joi.any(),
-                }
-            }
+                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                        .description('unit price name'),
+                    userId: Joi.string().length(24).required().description('id user'),
+                },
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
 
-                //วันเวลาที่สร้าง
-                payload.unitPriceDateCreate = Date.now()
+                // Create Date
+                payload.crt = Date.now();
 
-                //สถานะการใช้งาน
-                payload.isUse = true
+                // Status's using
+                payload.isUse = true;
 
-                let insert = await mongo.collection('unitPrice').insert(payload)
+                const insert = await mongo.collection('unitPrice').insert(payload);
 
                 // Get latsest ID
-                let latestInsert = await mongo.collection('unitPrice').find({}).sort({ _id: -1 }).limit(1).toArray();
+                const latestInsert = await mongo.collection('unitPrice').find({}).sort({ _id: -1 }).limit(1).toArray();
 
-                // Create & Insert Category-Log
-                let log = Object.assign({}, payload)
-                log.unitPriceId = latestInsert[0]._id.toString()
-                Util.writeLog(request, log, 'unitPrice-log', 'Insert')
+                // Create & Insert unit price-Log
+                const log = Object.assign({}, payload);
+                log.unitPriceId = latestInsert[0]._id.toString();
+                const writeLog = await Util.writeLog(req, log, 'unitPrice-log', 'insert');
 
                 return ({
+                    massage: 'OK',
                     statusCode: 200,
-                    massage: "OK"
-                })
-            } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
-            }
+                });
 
-        }
+            } catch (error) {
+                return (Boom.badGateway(error));
+            }
+        },
+
     },
     {  // PUT unitPrice
         method: 'PUT',
         path: '/unitPrice',
         config: {
             auth: false,
-            tags: ['api'],
             description: 'Update unitPrice ',
             notes: 'Update unitPrice ',
+            tags: ['api'],
             validate: {
                 payload: {
-                    unitPriceId: Joi.any().required(),
-                    unitPriceName: Joi.any(),
-                    userId: Joi.any().required(),
-                }
-            }
+                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                        .description('unit name'),
+                    unitPriceId: Joi.string().length(24).required().description('id unitPrice'),
+                    userId: Joi.string().length(24).required().description('id unitPrice'),
+                },
+            },
         },
-        handler: async (request, reply) => {
+        handler: async (req, reply) => {
             try {
-                const mongo = Util.getDb(request)
-                let payload = request.payload
+                const mongo = Util.getDb(req);
+                const payload = req.payload;
 
                 // Check No Data
-                let res = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(payload.unitPriceId) })
+                const res = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(payload.unitPriceId) });
                 if (!res) {
-                    return (Boom.badData(`Can't find ID ${payload.unitPriceId}`))
+                    return (Boom.badData(`Can't find ID ${payload.unitPriceId}`));
                 }
 
                 // Create Update Info & Update unitPrice
-                let updateInfo = {
-                    unitPriceName: payload.unitPriceName,
-                    unitPriceLatestUpdate: Date.now()
-                }
-                let update = await mongo.collection('unitPrice').update({ _id: mongoObjectId(payload.unitPriceId) }, { $set: updateInfo })
+                const updateInfo = {
+                    mdt: Date.now(),
+                    name: payload.name,
+                };
+                const update = await mongo.collection('unitPrice')
+                    .update({ _id: mongoObjectId(payload.unitPriceId) }, { $set: updateInfo });
 
                 // Create & Insert unitPrice-Log
-                Util.writeLog(request, payload, 'unitPrice-log', 'Update')
+                const writeLog = await Util.writeLog(req, payload, 'unitPrice-log', 'update');
 
                 // Return 200
                 return ({
+                    massage: 'OK',
                     statusCode: 200,
-                    massage: "OK"
-                })
+                });
 
             } catch (error) {
-                console.log(error)
-                return (Boom.badGateway(error))
+                return (Boom.badGateway(error));
             }
+        },
 
-        }
-    }
-]
+    },
+];
