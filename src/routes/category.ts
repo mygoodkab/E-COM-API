@@ -3,6 +3,7 @@ import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { Util } from '../util';
+
 const mongoObjectId = ObjectId;
 // tslint:disable:max-line-length
 module.exports = [
@@ -31,7 +32,7 @@ module.exports = [
                     res.categoryLog = await mongo.collection('category-log')
                         .find({ categoryId: res._id.toString() }).toArray();
                 } else {
-                    await mongo.collection('category').find({ isUse: true }).toArray();
+                    res = await mongo.collection('category').find({ isUse: true }).toArray();
                 }
 
                 // Return 200
@@ -59,13 +60,7 @@ module.exports = [
                 payload: {
                     name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional().description('Category name'),
                     userId: Joi.string().length(24).required().description('id user'),
-                    file: Joi.any().meta({ swaggerType: 'file' }).description('upload image file '),
                 },
-            },
-            payload: {
-                maxBytes: 5000000,
-                parse: true,
-                output: 'stream'
             },
         },
         handler: async (req, reply) => {
@@ -79,11 +74,6 @@ module.exports = [
                 insertInfo.crt = Date.now();
                 insertInfo.isUse = true;
                 const insert = await mongo.collection('category').insert(insertInfo);
-                const upload: any = await Util.upload(payload.file, 'test');
-                console.log(upload);
-                if (!upload.status) {
-                    return (Boom.badGateway(`can't upload`));
-                }
 
                 // Get latsest ID
                 const latestInsert = await mongo.collection('category').find({}).sort({ _id: -1 }).limit(1).toArray();
