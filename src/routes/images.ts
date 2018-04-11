@@ -27,10 +27,9 @@ module.exports = [
                 output: 'stream'
             },
         },
-        handler: (request, reply) => {
-            const req: any = request;
+        handler: async (req, reply) => {
             const payload = req.payload;
-            const mongo = Util.getDb(request);
+            const mongo = Util.getDb(req);
             try {
                 if (payload.file) {
                     let filename = payload.file.hapi.filename.split('.');
@@ -50,18 +49,14 @@ module.exports = [
                     const path = __dirname + pathSep.sep + 'upload' + pathSep.sep + fileInfo.name + '.' + fileType.toLowerCase();
 
                     // If folder is not exist
-                    if (!Util.existFolder(path)) {
-                        Boom.badRequest('False to create upload floder');
+                    if (!Util.existFolder(__dirname + pathSep.sep + 'upload')) {
+                        if (Util.mkdirFolder(__dirname + pathSep.sep + 'upload')) {
+                            return Boom.badRequest('False to create upload folder');
+                        }
                     }
 
                     // Create File Stream
                     const file = fs.createWriteStream(path);
-
-                    // If uploading error
-                    file.on('error', (err: any) => {
-                        console.log(err);
-                        Boom.badRequest(err);
-                    });
 
                     // Pip file
                     payload.file.pipe(file);
@@ -73,15 +68,15 @@ module.exports = [
                         fileInfo.createdata = new Date();
                         const insert = await mongo.collection('images').insert(fileInfo);
                         const latestInsert = await mongo.collection('images').findOne({ storeName });
-                        return ({
+                        return {
                             statusCode: 200,
                             massage: 'OK',
                             data: latestInsert,
-                        });
+                        };
                     });
 
                 } else {
-                    Boom.badRequest('No such file in payload');
+                    return Boom.badRequest('No such file in payload');
                 }
             } catch (error) {
                 return (Boom.badGateway(error));

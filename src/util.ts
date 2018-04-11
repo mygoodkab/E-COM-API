@@ -35,12 +35,9 @@ export class Util {
 		}
 	}
 	public static existFolder(path) {
-		if (!fs.existsSync(path)) {
-			fs.mkdir(path, (err) => {
-				return true;
-			});
-		} else {
-			return false;
-		}
+		return fs.existsSync(path);
+	}
+	public static mkdirFolder(path) {
+		return fs.mkdirSync(path);
 	}
 }
