@@ -32,7 +32,7 @@ module.exports = [
                     res = await mongo.collection('unit').findOne({ _id: mongoObjectId(params.id) });
                     res.unitLog = await mongo.collection('unit-log').find({ unitId: res._id.toString() }).toArray();
                 } else {
-                    await mongo.collection('unit').find({ isUse: true }).toArray();
+                    res = await mongo.collection('unit').find({ isUse: true }).toArray();
                 }
 
                 return {

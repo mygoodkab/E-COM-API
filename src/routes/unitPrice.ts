@@ -30,7 +30,7 @@ module.exports = [
                     res = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(params.id) });
                     res.unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res._id.toString() }).toArray();
                 } else {
-                    await mongo.collection('unitPrice').find({ isUse: true }).toArray();
+                    res = await mongo.collection('unitPrice').find({ isUse: true }).toArray();
                 }
 
                 return {
