@@ -13,5 +13,8 @@
     "status":{
       "IN_STOCK": "In Stock"
     }
+  },
+  "fileType":{
+    "images":["png","jpg","jpeg"]
   }
 }

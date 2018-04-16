@@ -4,13 +4,14 @@ import { ObjectId } from 'mongodb';
 import { Util } from '../util';
 import * as pathSep from 'path';
 import * as fs from 'fs';
-
+import { upload } from '../upload';
+const config = require('../config.json');
 const mongoObjectId = ObjectId;
 
 module.exports = [
-    {
+    {  // Upload Image
         method: 'POST',
-        path: '/upload-image',
+        path: '/image',
         config: {
             auth: false,
             tags: ['api'],
@@ -24,90 +25,79 @@ module.exports = [
             payload: {
                 maxBytes: 5000000,
                 parse: true,
-                output: 'stream'
+                output: 'stream',
+                allow: 'multipart/form-data',
             },
         },
         handler: async (req, reply) => {
-            const payload = req.payload;
-            const mongo = Util.getDb(req);
+
             try {
-                if (payload.file) {
-                    let filename = payload.file.hapi.filename.split('.');
-                    const fileType = filename.splice(filename.length - 1, 1)[0];
-                    const storeName = Util.uniqid() + '.' + fileType.toLowerCase();
-                    filename = filename.join('.');
+                const payload = req.payload;
+                const mongo = Util.getDb(req);
+                const filename = payload.file.hapi.filename.split('.');
+                const fileType = filename.splice(filename.length - 1, 1)[0];
 
-                    // create imageInfo for insert info db
-                    const fileInfo: any = {
-                        name: filename,
-                        storeName,
-                        fileType,
-                        ts: new Date(),
-                    };
+                // Check file type
+                console.log(config)
+                if (config.fileType.images.indexOf(fileType) <= -1) {
+                    return Boom.badData('Invalid File Type')
+                }
 
-                    // path file
-                    const path = __dirname + pathSep.sep + 'upload' + pathSep.sep + fileInfo.name + '.' + fileType.toLowerCase();
-
-                    // If folder is not exist
-                    if (!Util.existFolder(__dirname + pathSep.sep + 'upload')) {
-                        if (Util.mkdirFolder(__dirname + pathSep.sep + 'upload')) {
-                            return Boom.badRequest('False to create upload folder');
-                        }
+                // If folder is not exist and Create Floder
+                if (!Util.existFolder(__dirname + pathSep.sep + 'upload')) {
+                    if (Util.mkdirFolder(__dirname + pathSep.sep + 'upload')) {
+                        throw new Error('False to create upload folder')
                     }
+                }
+                const path = __dirname + pathSep.sep + 'upload' + pathSep.sep;
+                const fileDetail = await upload(payload.file, { path })
+                const insert = await mongo.collection('images').insertOne(fileDetail);
 
-                    // Create File Stream
-                    const file = fs.createWriteStream(path);
-
-                    // Pip file
-                    payload.file.pipe(file);
-
-                    // If upload success
-                    payload.file.on('end', async (err: any) => {
-                        const filestat = fs.statSync(path);
-                        fileInfo.fileSize = filestat.size;
-                        fileInfo.createdata = new Date();
-                        const insert = await mongo.collection('images').insert(fileInfo);
-                        const latestInsert = await mongo.collection('images').findOne({ storeName });
-                        return {
-                            statusCode: 200,
-                            massage: 'OK',
-                            data: latestInsert,
-                        };
-                    });
-
-                } else {
-                    return Boom.badRequest('No such file in payload');
+                return {
+                    statusCode: 200,
+                    massage: "OK",
+                    data: insert.insertedId,
                 }
             } catch (error) {
                 return (Boom.badGateway(error));
             }
         }
     },
+    {  // Get image file
+        method: 'GET',
+        path: '/image/{id}',
+        config: {
+            auth: false,
+            tags: ['api'],
+            description: 'Get image for UI',
+            notes: 'Get image ',
+            validate: {
+                params: {
+                    id: Joi.string().required().description('id image'),
+                },
+            },
+        },
+        handler: async (request, reply) => {
+            const mongo = Util.getDb(request);
+            try {
+                const resUpload = await mongo.collection('images').findOne({ _id: mongoObjectId(request.params.id) });
+                if (!resUpload) {
+                    return {
+                        statusCode: 404,
+                        message: "Bad Request",
+                        data: "Data not found"
+                    }
+                } else {
+                    let path: any = __dirname + pathSep.sep + "upload" + pathSep.sep + resUpload.storeName;
+                    return reply.file(path,
+                        {
+                            filename: resUpload.name + '.' + resUpload.fileType,
+                            mode: 'inline'
+                        })
+                }
+            } catch (error) {
+                reply(Boom.badGateway(error))
+            }
+        },
+    },
 ];
-          //    /* upload image file */
-            //    const filename = payload.file.hapi.filename.split('.');
-            //    const fileType = filename.splice(filename.length - 1, 1)[0];
-            //    filename = filename.join('.');
-            //    const storeName = Util.uniqid() + '.' + fileType.toLowerCase();
-            //    // create imageInfo for insert info db
-            //    const fileInfo: any = {
-            //        name: filename,
-            //        storeName,
-            //        fileType,
-            //        ts: new Date(),
-            //    };
-            //    // create file Stream
-            //    const location = __dirname + pathSep.sep + 'upload' + pathSep.sep + fileInfo.name + '.' + fileType.toLowerCase();
-            //    const file = fs.createWriteStream(location);
-            //    console.log(__dirname);
-            //    file.on('error', (err: any) => {
-            //        console.log(err);
-            //    });
-            //    payload.file.pipe(file);
-            //    payload.file.on('end', async (err: any) => {
-            //        const filestat = fs.statSync(location);
-            //        fileInfo.fileSize = filestat.size;
-            //        fileInfo.createdata = new Date();
-            //        const insertImage = await mongo.collection('upload').insert(fileInfo);
-            //    });
-            //    /* Endding upload image file */
