@@ -5,9 +5,8 @@ import { Util } from '../util';
 import * as pathSep from 'path';
 import * as fs from 'fs';
 import { upload } from '../upload';
-const config = require('../config.json');
+import { config } from '../config';
 const mongoObjectId = ObjectId;
-
 module.exports = [
     {  // Upload Image
         method: 'POST',
@@ -38,7 +37,6 @@ module.exports = [
                 const fileType = filename.splice(filename.length - 1, 1)[0];
 
                 // Check file type
-                console.log(config)
                 if (config.fileType.images.indexOf(fileType) <= -1) {
                     return Boom.badData('Invalid File Type')
                 }

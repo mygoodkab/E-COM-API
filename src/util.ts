@@ -40,4 +40,13 @@ export class Util {
 	public static mkdirFolder(path) {
 		return fs.mkdirSync(path);
 	}
+
+	public static tokenTimeout(end: number|string, condition: any) {
+		end = end.toString()
+		end.length == 10 ? end = end + '000' : null;
+		end = parseInt(end)
+		if (Date.now() >= end) return false
+		if (Date.now() < end && (end - Date.now()) <= condition) return true
+		return false
+	}
 }

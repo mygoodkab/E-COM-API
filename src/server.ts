@@ -8,8 +8,10 @@ import * as inert from 'inert';
 import * as path from 'path';
 import * as vision from 'vision';
 import { Util } from './util';
+import { config } from './config';
+
 // tslint:disable:max-line-length no-console no-var-requires
-const config = require('./config.json');
+//const config = require('./config.json');
 // tslint:disable-next-line:no-var-requires
 const Pack = require('./../package');
 const optionsSwagger = {
@@ -76,7 +78,7 @@ async function liftOff() {
         await server.auth.strategy('jwt', 'jwt', {
             key: Util.jwtKey(),
             validate,
-            verifyOptions: { maxAge: '30s' },
+            verifyOptions: { maxAge: config.token.timeout },
         });
         // Event 'request'
         await server.events.on('request', (request: any, event: any, tags: any) => {
