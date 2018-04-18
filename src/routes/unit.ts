@@ -56,7 +56,7 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                    name: Joi.string().min(1).max(100).regex(/^[\S]+/).optional()
                         .description('Unit name'),
                     userId: Joi.string().length(24).required().description('id user'),
                 },
@@ -106,7 +106,7 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional()
+                    name: Joi.string().min(1).max(100).regex(/^[\S]+/).optional()
                         .description('unit name'),
                     unitId: Joi.string().length(24).required().description('id unit'),
                     userId: Joi.string().length(24).required().description('id user'),

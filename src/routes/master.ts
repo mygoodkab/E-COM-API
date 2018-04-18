@@ -88,12 +88,12 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    barcode: Joi.string().regex(/^[a-zA-Z0-9]+/).required(),
+                    barcode: Joi.string().regex(/^[\S]+/).required(),
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
                     desc: Joi.number().integer().min(1).description('Master description'),
                     imageId: Joi.string().length(24).optional().description('id Image'),
-                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/)
+                    name: Joi.string().min(1).max(100).regex(/^[\S]+/)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
                     unitId: Joi.string().length(24).optional().description('id unitId'),
@@ -146,13 +146,13 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    barcode: Joi.string().regex(/^[a-zA-Z0-9]+/).required(),
+                    barcode: Joi.string().regex(/^[\S]+/).required(),
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
                     desc: Joi.number().integer().min(1).description('Master description'),
                     imageMasterId: Joi.string().length(24).optional().description('id Image'),
                     masterId: Joi.string().length(24).optional().description('id Master'),
-                    name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/)
+                    name: Joi.string().min(1).max(100).regex(/^[\S]+/)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
                     unitId: Joi.string().length(24).optional().description('id unitId'),

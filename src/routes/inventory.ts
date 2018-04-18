@@ -62,7 +62,7 @@ module.exports = [
                 payload: {
                     metadata: Joi.array().items([{
                         amount: Joi.number().min(1).max(100).integer().required().description('number of import/export item'),
-                        masterBarcode: Joi.string().regex(/^[a-zA-Z0-9]+/).required().description('barcode master'),
+                        masterBarcode: Joi.string().regex(/^[\S]+/).required().description('barcode master'),
                     }]).required(),
                     method: Joi.string().valid(['import', 'export']).required().description('method to update inventory'),
                     userId: Joi.string().length(24).required().description('id user'),
