@@ -1,6 +1,5 @@
 
-
-let config = {
+const config = {
     path: {
         autoRoutes: [
             'dist',
@@ -36,4 +35,4 @@ let config = {
     }
 };
 
-export { config } 
+export { config };

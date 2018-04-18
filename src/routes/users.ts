@@ -22,6 +22,7 @@ module.exports = [
                     password: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9]+/).required()
                         .description('password'),
                     type: Joi.string().valid(['admin', 'super-adim', 'staff']),
+                    imageId: Joi.string().length(24).optional().description('id Image'),
                 },
             },
         },
@@ -103,7 +104,7 @@ module.exports = [
                 if (login) {
                     delete login.password;
                     login.ts = Date.now();
-                    login.refresh = Util.hash(login)
+                    login.refresh = Util.hash(login);
                     const token = JWT.sign(login, Util.jwtKey(), { expiresIn: config.token.timeout });
                     const insert = await mongo.collection('token').insertOne({ token, refresh: login.refresh , method: 'login' });
                     return ({
@@ -139,24 +140,24 @@ module.exports = [
                 const payload = req.payload;
                 const res = await mongo.collection('token').findOne({ refresh: payload.refresh });
 
-                if (!res) return Boom.badRequest('Can not find Refresh Token')
+                if (!res) {return Boom.badRequest('Can not find Refresh Token'); }
 
-                // Decode JWT to get EXP 
-                const decode = JWTDecode(res.token)
+                // Decode JWT to get EXP
+                const decode = JWTDecode(res.token);
 
-                // Check EXP is Timeout/Time to refresh 
-                if (!Util.tokenTimeout(decode.exp, config.token.preiousRefresh)) return Boom.badRequest('Token was TIME OUT/NOT TIME TO REFRESH')
+                // Check EXP is Timeout/Time to refresh
+                if (!Util.tokenTimeout(decode.exp, config.token.preiousRefresh)) {return Boom.badRequest('Token was TIME OUT/NOT TIME TO REFRESH'); }
 
                 // Create new refresh code
-                res.refresh = Util.hash(res)
+                res.refresh = Util.hash(res);
                 const token = JWT.sign(res, Util.jwtKey(), { expiresIn: config.token.timeout });
-                const insert = await mongo.collection('token').insert({ token, refresh: res.refresh, method: 'refresh' })
+                const insert = await mongo.collection('token').insert({ token, refresh: res.refresh, method: 'refresh' });
 
                 return {
                     statusCode: 200,
-                    message: "OK",
+                    message: 'OK',
                     data: token,
-                }
+                };
 
             } catch (error) {
                 return (Boom.badGateway(error));

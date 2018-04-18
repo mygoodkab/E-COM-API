@@ -92,7 +92,7 @@ module.exports = [
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
                     desc: Joi.number().integer().min(1).description('Master description'),
-                    imageMasterId: Joi.string().length(24).optional().description('id Image'),
+                    imageId: Joi.string().length(24).optional().description('id Image'),
                     name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),

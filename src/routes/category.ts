@@ -60,6 +60,7 @@ module.exports = [
                 payload: {
                     name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional().description('Category name'),
                     userId: Joi.string().length(24).required().description('id user'),
+                    imageId: Joi.string().length(24).optional().description('id Image'),
                 },
             },
         },
