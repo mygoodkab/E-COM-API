@@ -16,30 +16,33 @@ module.exports = [
             tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.string().length(24).optional().description('id category'),
+                    id: Joi.string().optional().description('id category'),
                 },
             },
         }, handler: async (req, reply) => {
             try {
                 const mongo = Util.getDb(req);
                 const params = req.params;
+                const find: any = { isUse: true, };
 
-                // Get Info & log
-                let res;
                 if (params.id === '{id}') { delete params.id; }
-                if (params.id) {
-                    res = await mongo.collection('category').findOne({ _id: mongoObjectId(params.id) });
-                    res.categoryLog = await mongo.collection('category-log')
-                        .find({ categoryId: res._id.toString() }).toArray();
-                } else {
-                    res = await mongo.collection('category').find({ isUse: true }).toArray();
+                if (params.id) { find._id = mongoObjectId(params.id); }
+
+                // GET category info
+                const res = await mongo.collection('category').find(find).toArray();
+
+                // GET category-log & parent
+                for (const key in res) {
+                    if (res.hasOwnProperty(key)) {
+                        res[key].categoryLog = await mongo.collection('category-log').find({ categoryId: res[key]._id.toString() }).toArray();
+                        if (res[key].categoryId) { res[key].parentCategory = await mongo.collection('category').findOne({ _id: mongoObjectId(res[key].categoryId) }); }
+                    }
                 }
 
-                // Return 200
                 return {
-                    data: res,
-                    message: 'OK',
                     statusCode: 200,
+                    message: 'OK',
+                    data: res,
                 };
 
             } catch (error) {
@@ -61,6 +64,7 @@ module.exports = [
                     name: Joi.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+/).optional().description('Category name'),
                     userId: Joi.string().length(24).required().description('id user'),
                     imageId: Joi.string().length(24).optional().description('id Image'),
+                    categoryId: Joi.string().length(24).optional().description('id Image'),
                 },
             },
         },

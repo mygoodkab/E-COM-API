@@ -15,7 +15,7 @@ module.exports = [
             tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.string().length(24).optional().description('id unit price'),
+                    id: Joi.string().optional().description('id unit price'),
                 },
             },
         }, handler: async (req, reply) => {

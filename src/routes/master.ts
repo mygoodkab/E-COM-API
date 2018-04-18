@@ -16,7 +16,7 @@ module.exports = [
             tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.string().length(24).optional().description('id Master'),
+                    id: Joi.string().optional().description('id Master'),
                 },
             },
         },

@@ -23,7 +23,7 @@ export class Util {
 		return key;
 	}
 	public static jwtKey() {
-		return 'xxxxx';
+		return '6C76rmkogGjhnILHgdVfogcn5cYMvjZk';
 	}
 	public static async writeLog(request, payload, collection, method) {
 		try {
