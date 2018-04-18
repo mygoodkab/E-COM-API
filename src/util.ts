@@ -41,12 +41,16 @@ export class Util {
 		return fs.mkdirSync(path);
 	}
 
-	public static tokenTimeout(end: number|string, condition: any) {
-		end = end.toString()
-		end.length == 10 ? end = end + '000' : null;
-		end = parseInt(end)
-		if (Date.now() >= end) return false
-		if (Date.now() < end && (end - Date.now()) <= condition) return true
-		return false
+	public static tokenTimeout(end: number, condition: number) {
+		const now = Date.now();
+		let toString = end.toString();
+		// change END length form 10 to be 13
+		if (end.toString().length === 10) {
+			toString += '000';
+		}
+		end = Number(toString);
+		if (now >= end) { return false; }
+		if (now < end && (end - now) <= condition) { return true; }
+		return false;
 	}
 }

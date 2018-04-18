@@ -38,24 +38,26 @@ module.exports = [
 
                 // Check file type
                 if (config.fileType.images.indexOf(fileType) <= -1) {
-                    return Boom.badData('Invalid File Type')
+                    return Boom.badData('Invalid File Type');
                 }
 
                 // If folder is not exist and Create Floder
                 if (!Util.existFolder(__dirname + pathSep.sep + 'upload')) {
                     if (Util.mkdirFolder(__dirname + pathSep.sep + 'upload')) {
-                        throw new Error('False to create upload folder')
+                        throw new Error('False to create upload folder');
                     }
                 }
+
                 const path = __dirname + pathSep.sep + 'upload' + pathSep.sep;
-                const fileDetail = await upload(payload.file, { path })
+                const fileDetail = await upload(payload.file, { path });
                 const insert = await mongo.collection('images').insertOne(fileDetail);
 
                 return {
                     statusCode: 200,
-                    massage: "OK",
+                    massage: 'OK',
                     data: insert.insertedId,
-                }
+                };
+
             } catch (error) {
                 return (Boom.badGateway(error));
             }
@@ -82,19 +84,19 @@ module.exports = [
                 if (!resUpload) {
                     return {
                         statusCode: 404,
-                        message: "Bad Request",
-                        data: "Data not found"
-                    }
+                        message: 'Bad Request',
+                        data: 'Data not found'
+                    };
                 } else {
-                    let path: any = __dirname + pathSep.sep + "upload" + pathSep.sep + resUpload.storeName;
+                    const path: any = __dirname + pathSep.sep + 'upload' + pathSep.sep + resUpload.storeName;
                     return reply.file(path,
                         {
                             filename: resUpload.name + '.' + resUpload.fileType,
                             mode: 'inline'
-                        })
+                        });
                 }
             } catch (error) {
-                reply(Boom.badGateway(error))
+                reply(Boom.badGateway(error));
             }
         },
     },
