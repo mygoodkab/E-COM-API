@@ -32,7 +32,8 @@ const config = {
     },
     timezone: {
         thai: 7 * 60 * 60 * 1000
-    }
+    },
+    regex: /[\S]+/,
 };
 
 export { config };

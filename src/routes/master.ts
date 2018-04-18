@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { Util } from '../util';
-
+import { config } from '../config';
 const mongoObjectId = ObjectId;
 
 module.exports = [
@@ -88,12 +88,12 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    barcode: Joi.string().regex(/^[\S]+/).required(),
+                    barcode: Joi.string().regex(config.regex).required(),
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
                     desc: Joi.number().integer().min(1).description('Master description'),
                     imageId: Joi.string().length(24).optional().description('id Image'),
-                    name: Joi.string().min(1).max(100).regex(/^[\S]+/)
+                    name: Joi.string().min(1).max(100).regex(config.regex)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
                     unitId: Joi.string().length(24).optional().description('id unitId'),
@@ -146,13 +146,13 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    barcode: Joi.string().regex(/^[\S]+/).required(),
+                    barcode: Joi.string().regex(config.regex).required(),
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
                     desc: Joi.number().integer().min(1).description('Master description'),
                     imageMasterId: Joi.string().length(24).optional().description('id Image'),
                     masterId: Joi.string().length(24).optional().description('id Master'),
-                    name: Joi.string().min(1).max(100).regex(/^[\S]+/)
+                    name: Joi.string().min(1).max(100).regex(config.regex)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
                     unitId: Joi.string().length(24).optional().description('id unitId'),

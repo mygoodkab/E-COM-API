@@ -18,8 +18,8 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    username: Joi.string().min(1).max(20).regex(/^[\S]+/).required(),
-                    password: Joi.string().min(1).max(100).regex(/^[\S]+/).required()
+                    username: Joi.string().min(1).max(20).regex(config.regex).required(),
+                    password: Joi.string().min(1).max(100).regex(config.regex).required()
                         .description('password'),
                     type: Joi.string().valid(['admin', 'super-adim', 'staff']),
                     imageId: Joi.string().length(24).optional().description('id Image'),
@@ -90,8 +90,8 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    password: Joi.string().min(1).max(100).regex(/^[\S]+/).required().description('password'),
-                    username: Joi.string().min(1).max(20).regex(/^[\S]+/).required(),
+                    password: Joi.string().min(1).max(100).regex(config.regex).required().description('password'),
+                    username: Joi.string().min(1).max(20).regex(config.regex).required(),
                 },
             },
         },

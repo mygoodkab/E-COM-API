@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { Util } from '../util';
-
+import { config } from '../config';
 const mongoObjectId = ObjectId;
 
 module.exports = [
@@ -62,7 +62,7 @@ module.exports = [
                 payload: {
                     metadata: Joi.array().items([{
                         amount: Joi.number().min(1).max(100).integer().required().description('number of import/export item'),
-                        masterBarcode: Joi.string().regex(/^[\S]+/).required().description('barcode master'),
+                        masterBarcode: Joi.string().regex(config.regex).required().description('barcode master'),
                     }]).required(),
                     method: Joi.string().valid(['import', 'export']).required().description('method to update inventory'),
                     userId: Joi.string().length(24).required().description('id user'),

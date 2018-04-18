@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 import * as JWT from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { Util } from '../util';
-
+import { config } from '../config';
 const mongoObjectId = ObjectId;
 // tslint:disable:max-line-length
 module.exports = [
@@ -61,7 +61,7 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    name: Joi.string().min(1).max(100).regex(/^[\S]+/).optional().description('Category name'),
+                    name: Joi.string().min(1).max(100).regex(config.regex).optional().description('Category name'),
                     userId: Joi.string().length(24).required().description('id user'),
                     imageId: Joi.string().length(24).optional().description('id Image'),
                     categoryId: Joi.string().length(24).optional().description('id Image'),
@@ -111,7 +111,7 @@ module.exports = [
             validate: {
                 payload: {
                     categoryId: Joi.string().length(24).required().description('id category'),
-                    name: Joi.string().min(1).max(100).regex(/^[\S]+/).optional()
+                    name: Joi.string().min(1).max(100).regex(config.regex).optional()
                         .description('Category name'),
                     userId: Joi.string().length(24).required().description('id user'),
                 },
