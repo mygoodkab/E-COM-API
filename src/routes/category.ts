@@ -152,4 +152,39 @@ module.exports = [
         },
 
     },
+    {  // Delete Category
+        method: 'DELETE',
+        path: '/category/{id}',
+        config: {
+            auth: false,
+            description: 'Delete category and check Master ',
+            notes: 'Delete category and check Master ',
+            tags: ['api'],
+            validate: {
+                params: {
+                    id: Joi.string().length(24).required().description('id category'),
+                },
+            },
+        },
+        handler: async (req, reply) => {
+            try {
+                const mongo = Util.getDb(req);
+                const params = req.params;
+                const res = await mongo.collection('master').findOne({ categoryId: params.id });
+                if (res) { return (Boom.badGateway('CAN NOT DELETE Data is used in master')); }
+                const del = await mongo.collection('category').deleteOne({ _id: mongoObjectId(params.id) });
+
+                // Return 200
+                return ({
+                    massage: 'OK',
+                    statusCode: 200,
+                });
+
+            } catch (error) {
+                return (Boom.badGateway(error));
+            }
+
+        },
+
+    },
 ];

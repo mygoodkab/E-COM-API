@@ -164,4 +164,37 @@ module.exports = [
             }
         },
     },
+    {  // Delete Master
+        method: 'DELETE',
+        path: '/users/{id}',
+        config: {
+            auth: false,
+            description: 'delete user',
+            notes: 'delete user ',
+            tags: ['api'],
+            validate: {
+                params: {
+                    id: Joi.string().length(24).required().description('id category'),
+                },
+            },
+        },
+        handler: async (req, reply) => {
+            try {
+                const mongo = Util.getDb(req);
+                const params = req.params;
+                const del = await mongo.collection('users').deleteOne({ _id: mongoObjectId(params.id) });
+
+                // Return 200
+                return ({
+                    massage: 'OK',
+                    statusCode: 200,
+                });
+
+            } catch (error) {
+                return (Boom.badGateway(error));
+            }
+
+        },
+
+    },
 ];

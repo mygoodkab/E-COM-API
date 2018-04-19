@@ -12,7 +12,7 @@ module.exports = [
         path: '/unit/{id?}',
         config: {
             auth: false,
-            description: 'Get Inventory',
+            description: 'Get Unit',
             tags: ['api'],
             validate: {
                 params: {
@@ -138,6 +138,41 @@ module.exports = [
                 // Create & Insert unit-Log
                 const writeLog = await Util.writeLog(req, payload, 'unit-log', 'update');
 
+                return ({
+                    massage: 'OK',
+                    statusCode: 200,
+                });
+
+            } catch (error) {
+                return (Boom.badGateway(error));
+            }
+
+        },
+
+    },
+    {  // Delete Unit
+        method: 'DELETE',
+        path: '/unit/{id}',
+        config: {
+            auth: false,
+            description: 'check Master before delete Unit ',
+            notes: 'check Master before delete Unit',
+            tags: ['api'],
+            validate: {
+                params: {
+                    id: Joi.string().length(24).required().description('id unit'),
+                },
+            },
+        },
+        handler: async (req, reply) => {
+            try {
+                const mongo = Util.getDb(req);
+                const params = req.params;
+                const res = await mongo.collection('master').findOne({ unitId: params.id });
+                if (res) { return (Boom.badGateway('CAN NOT DELETE Data is used in master')); }
+                const del = await mongo.collection('unit').deleteOne({ _id: mongoObjectId(params.id) });
+
+                // Return 200
                 return ({
                     massage: 'OK',
                     statusCode: 200,

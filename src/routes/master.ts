@@ -38,8 +38,8 @@ module.exports = [
                     res.unitInfo = await mongo.collection('unit')
                         .findOne({ _id: mongoObjectId(res.unitId) });
 
-                    res.unitPriceInfo = await mongo.collection('unitPrice')
-                        .findOne({ _id: mongoObjectId(res.unitPriceId) });
+                    // res.unitPriceInfo = await mongo.collection('unitPrice')
+                    //     .findOne({ _id: mongoObjectId(res.unitPriceId) });
 
                     res.categoryInfo = await mongo.collection('category')
                         .findOne({ _id: mongoObjectId(res.categoryId) });
@@ -89,15 +89,15 @@ module.exports = [
             validate: {
                 payload: {
                     barcode: Joi.string().regex(config.regex).required(),
-                    categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
-                    desc: Joi.number().integer().min(1).description('Master description'),
-                    imageId: Joi.string().length(24).optional().description('id Image'),
+                    desc: Joi.string().description('Master description'),
                     name: Joi.string().min(1).max(100).regex(config.regex)
-                        .optional().description('Category name'),
+                        .optional().description('Master name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
+                    categoryId: Joi.string().length(24).optional().description('id Category'),
+                    imageId: Joi.string().length(24).optional().description('id Image'),
                     unitId: Joi.string().length(24).optional().description('id unitId'),
-                    unitPriceId: Joi.string().length(24).optional().description('id unitPriceId'),
+                    // unitPriceId: Joi.string().length(24).optional().description('id unitPriceId'),
                     userId: Joi.string().length(24).optional().description('id userId'),
                 },
             },
@@ -146,17 +146,17 @@ module.exports = [
             tags: ['api'],
             validate: {
                 payload: {
-                    barcode: Joi.string().regex(config.regex).required(),
+                    barcode: Joi.string().regex(config.regex),
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     cost: Joi.number().integer().min(1),
                     desc: Joi.number().integer().min(1).description('Master description'),
-                    imageMasterId: Joi.string().length(24).optional().description('id Image'),
-                    masterId: Joi.string().length(24).optional().description('id Master'),
+                    imageMasterId: Joi.string().description('id Image'),
+                    masterId: Joi.string().length(24).optional().description('id Master').required(),
                     name: Joi.string().min(1).max(100).regex(config.regex)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
                     unitId: Joi.string().length(24).optional().description('id unitId'),
-                    unitPriceId: Joi.string().length(24).optional().description('id unitPriceId'),
+                    // unitPriceId: Joi.string().length(24).optional().description('id unitPriceId'),
                     userId: Joi.string().length(24).optional().description('id userId'),
                 },
             },
@@ -183,6 +183,41 @@ module.exports = [
 
                 // Create & Insert Log
                 const writeLog = await Util.writeLog(req, payload, 'master-log', 'update');
+
+                // Return 200
+                return ({
+                    massage: 'OK',
+                    statusCode: 200,
+                });
+
+            } catch (error) {
+                return (Boom.badGateway(error));
+            }
+
+        },
+
+    },
+    {  // Delete Master
+        method: 'DELETE',
+        path: '/master/{id}',
+        config: {
+            auth: false,
+            description: 'check Inventory before delete Master',
+            notes: 'check Inventory before delete Master ',
+            tags: ['api'],
+            validate: {
+                params: {
+                    id: Joi.string().length(24).required().description('id category'),
+                },
+            },
+        },
+        handler: async (req, reply) => {
+            try {
+                const mongo = Util.getDb(req);
+                const params = req.params;
+                const res = await mongo.collection('inventory').findOne({ masterId: params.id });
+                if (res) { return (Boom.badGateway('CAN NOT DELETE Data is used in inventory')); }
+                const del = await mongo.collection('master').deleteOne({ _id: mongoObjectId(params.id) });
 
                 // Return 200
                 return ({
