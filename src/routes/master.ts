@@ -35,8 +35,8 @@ module.exports = [
                     if (!res) {
                         return (Boom.badData(`Can't find ID ${params.masterId}`));
                     }
-                    res.unitInfo = await mongo.collection('unit')
-                        .findOne({ _id: mongoObjectId(res.unitId) });
+                    // res.unitInfo = await mongo.collection('unit')
+                    //     .findOne({ _id: mongoObjectId(res.unitId) });
 
                     // res.unitPriceInfo = await mongo.collection('unitPrice')
                     //     .findOne({ _id: mongoObjectId(res.unitPriceId) });
@@ -96,8 +96,13 @@ module.exports = [
                     price: Joi.number().integer().min(1).description('Sell price'),
                     categoryId: Joi.string().length(24).optional().description('id Category'),
                     imageId: Joi.string().length(24).optional().description('id Image'),
-                    unitId: Joi.string().length(24).optional().description('id unitId'),
+                    unitId: Joi.string().optional().description('id unitId'),
                     sku: Joi.string().description('Stock keeping unit'),
+                    brand: Joi.string().description('Brand'),
+                    model: Joi.string().description('Model'),
+                    size: Joi.string().description('Size'),
+                    weight: Joi.string().description('Weight'),
+                    color: Joi.string().description('Color'),
                     // unitPriceId: Joi.string().length(24).optional().description('id unitPriceId'),
                     userId: Joi.string().length(24).optional().description('id userId'),
                 },
@@ -156,8 +161,13 @@ module.exports = [
                     name: Joi.string().min(1).max(100).regex(config.regex)
                         .optional().description('Category name'),
                     price: Joi.number().integer().min(1).description('Sell price'),
-                    unitId: Joi.string().length(24).optional().description('id unitId'),
+                    unitId: Joi.string().optional().description('id unitId'),
                     sku: Joi.string().description('Stock keeping unit'),
+                    brand: Joi.string().description('Brand'),
+                    model: Joi.string().description('Model'),
+                    size: Joi.string().description('Size'),
+                    weight: Joi.string().description('Weight'),
+                    color: Joi.string().description('Color'),
                     // unitPriceId: Joi.string().length(24).optional().description('id unitPriceId'),
                     userId: Joi.string().length(24).optional().description('id userId'),
                 },
