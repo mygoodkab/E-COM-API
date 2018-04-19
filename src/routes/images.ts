@@ -33,13 +33,6 @@ module.exports = [
             try {
                 const payload = req.payload;
                 const mongo = Util.getDb(req);
-                const filename = payload.file.hapi.filename.split('.');
-                const fileType = filename.splice(filename.length - 1, 1)[0];
-
-                // Check file type
-                if (config.fileType.images.indexOf(fileType) <= -1) {
-                    return Boom.badData('Invalid File Type');
-                }
 
                 // If folder is not exist and Create Floder
                 if (!Util.existFolder(__dirname + pathSep.sep + 'upload')) {
@@ -49,13 +42,13 @@ module.exports = [
                 }
 
                 const path = __dirname + pathSep.sep + 'upload' + pathSep.sep;
-                const fileDetail = await upload(payload.file, { path });
-                const insert = await mongo.collection('images').insertOne(fileDetail);
+                const fileDetail = await upload(payload.file, path, config.fileType.images);
+                const insert = await mongo.collection('images').insert(fileDetail);
 
                 return {
                     statusCode: 200,
                     massage: 'OK',
-                    data: insert.insertedId,
+                    data: insert.insertedIds,
                 };
 
             } catch (error) {
