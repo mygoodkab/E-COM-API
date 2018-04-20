@@ -41,7 +41,7 @@ module.exports = [
                     }
                 }
 
-                const path = config.path.upload + pathSep.sep;
+                const path = config.path.upload;
                 const fileDetail = await upload(payload.file, path, config.fileType.images);
                 const insert = await mongo.collection('images').insert(fileDetail);
 
