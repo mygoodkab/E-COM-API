@@ -1,6 +1,6 @@
 import { Util } from './util';
 import * as fs from 'fs';
-
+import * as pathSep from 'path';
 const upload = (file: any, location: string, validateType: any[]) => {
     if (!file) { throw new Error('No File(s)'); }
     return Array.isArray(file) ? multiUpload(file, location, validateType) : fileUpload(file, location, validateType);
@@ -25,7 +25,7 @@ const fileUpload = (file: any, location: string, validateType: any[]) => {
     };
 
     // path file
-    const path = location + fileInfo.storeName;
+    const path = pathSep.join(location, fileInfo.storeName);
 
     // Create File Stream
     const fileStrem = fs.createWriteStream(path);
