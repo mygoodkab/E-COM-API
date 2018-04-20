@@ -24,54 +24,27 @@ module.exports = [
             try {
                 const mongo = Util.getDb(req);
                 const params = req.params;
-                // ถ้ามี parameter id ให้ค้นหาข้อมูลตาม id
-                let res;
-                // ถ้ามี paramter id ข้อมูลที่ res จะเป็นแบบ Object สามารถ Assign ค่าได้เลยได้เลย
-                // ดึงข้อมูลจากข้อมูล table อื่นจาก Reference Id
+                const find: any = { isUse: true, };
+
                 if (params.id === '{id}') { delete params.id; }
-                if (params.id) {
-                    // If no data
-                    res = await mongo.collection('master').findOne({ _id: mongoObjectId(params.id) });
-                    if (!res) {
-                        return (Boom.badData(`Can't find ID ${params.masterId}`));
-                    }
-                    // res.unitInfo = await mongo.collection('unit')
-                    //     .findOne({ _id: mongoObjectId(res.unitId) });
+                if (params.id) { find._id = mongoObjectId(params.id); }
 
-                    // res.unitPriceInfo = await mongo.collection('unitPrice')
-                    //     .findOne({ _id: mongoObjectId(res.unitPriceId) });
+                const res = await mongo.collection('master').find(find).toArray();
 
-                    res.categoryInfo = await mongo.collection('category')
-                        .findOne({ _id: mongoObjectId(res.categoryId) });
-
-                    res.userInfo = await mongo.collection('users')
-                        .findOne({ _id: mongoObjectId(res.userId) });
-
-                    res.masterLog = await mongo.collection('master-log')
-                        .find({ masterId: res._id.toString() }).toArray();
-                } else {
-                    res = await mongo.collection('master').find({ isUse: true }).toArray();
-                    for (const index in res) {
-                        if (res.hasOwnProperty(index)) {
-                            res[index].unitInfo = await mongo.collection('unit')
-                                .findOne({ _id: mongoObjectId(res[index].unitId) });
-
-                            res[index].unitPriceInfo = await mongo.collection('unitPrice')
-                                .findOne({ _id: mongoObjectId(res[index].unitPriceId) });
-
-                            res[index].categoryInfo = await mongo.collection('category')
-                                .findOne({ _id: mongoObjectId(res[index].categoryId) });
-
-                            res[index].userInfo = await mongo.collection('users')
-                                .findOne({ _id: mongoObjectId(res[index].userId) });
-                        }
-                    }
+                for (const index in res) {
+                        // res[index].unitInfo = await mongo.collection('unit').findOne({ _id: mongoObjectId(res[index].unitId) });
+                        // res[index].unitPriceInfo = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(res[index].unitPriceId) });
+                        res[index].categoryInfo = await mongo.collection('category').findOne({ _id: mongoObjectId(res[index].categoryId) });
+                        res[index].userInfo = await mongo.collection('users').findOne({ _id: mongoObjectId(res[index].userId) });
+                        res[index].masterLog = await mongo.collection('master-log').find({ masterId: res[index]._id.toString() }).toArray();
                 }
+
                 return {
                     data: res,
                     message: 'OK',
                     statusCode: 200,
                 };
+
             } catch (error) {
                 return (Boom.badGateway(error));
             }
@@ -243,5 +216,53 @@ module.exports = [
 
         },
 
+    },
+    {
+        method: 'GET',
+        path: '/master/filter',
+        config: {
+            auth: false,
+            description: 'Get Inventory-Log',
+            tags: ['api'],
+            validate: {
+                options: {
+                    allowUnknown: true,
+                },
+                query: {
+                    masterId: Joi.string().length(24).optional().description('id master'),
+                    barcode: Joi.string().optional().description('Barcode'),
+                },
+            },
+        },
+        handler: async (req, reply) => {
+            try {
+                const db = Util.getDb(req);
+                const query = req.query;
+                const find: any = { isUse: true };
+                // Loop from key in payload to check query string and assign value to find/sort/limit data
+                for (const key in query) {
+                        switch (key) {
+                            case 'barcode':
+                                find.barcode = query.barcode;
+                                break;
+                            case 'masterId':
+                                find._id = mongoObjectId(query.masterId);
+                                break;
+                            default:
+                                find[key] = query[key];
+                                break;
+                        }
+                }
+                const inventoryLogs = await db.collection('master').find(find).toArray();
+
+                return {
+                    data: inventoryLogs,
+                    message: 'OK',
+                    statusCode: 200,
+                };
+            } catch (error) {
+                return Boom.badGateway(error.message, error.data);
+            }
+        },
     },
 ];

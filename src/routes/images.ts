@@ -35,13 +35,13 @@ module.exports = [
                 const mongo = Util.getDb(req);
 
                 // If folder is not exist and Create Floder
-                if (!Util.existFolder(__dirname + pathSep.sep + 'upload')) {
-                    if (Util.mkdirFolder(__dirname + pathSep.sep + 'upload')) {
+                if (!Util.existFolder(config.path.upload)) {
+                    if (Util.mkdirFolder(config.path.upload)) {
                         throw new Error('False to create upload folder');
                     }
                 }
 
-                const path = __dirname + pathSep.sep + 'upload' + pathSep.sep;
+                const path = config.path.upload + pathSep.sep;
                 const fileDetail = await upload(payload.file, path, config.fileType.images);
                 const insert = await mongo.collection('images').insert(fileDetail);
 
@@ -81,7 +81,7 @@ module.exports = [
                         data: 'Data not found'
                     };
                 } else {
-                    const path: any = __dirname + pathSep.sep + 'upload' + pathSep.sep + resUpload.storeName;
+                    const path: any = pathSep.join(config.path.upload, resUpload.storeName);
                     return reply.file(path,
                         {
                             filename: resUpload.name + '.' + resUpload.fileType,

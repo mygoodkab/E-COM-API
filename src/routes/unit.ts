@@ -23,16 +23,17 @@ module.exports = [
             try {
                 const mongo = Util.getDb(req);
                 const params = req.params;
-
+                const find: any = { isUse: true, };
                 // GET  Unit Info
                 let res;
                 // GET log
                 if (params.id === '{id}') { delete params.id; }
-                if (params.id) {
-                    res = await mongo.collection('unit').findOne({ _id: mongoObjectId(params.id) });
-                    res.unitLog = await mongo.collection('unit-log').find({ unitId: res._id.toString() }).toArray();
-                } else {
-                    res = await mongo.collection('unit').find({ isUse: true }).toArray();
+                if (params.id) { find._id = mongoObjectId(params.id); }
+
+                res = await mongo.collection('unit').find(find).toArray();
+
+                for (const key in res) {
+                        res[key].unitLog = await mongo.collection('unit-log').find({ unitId: res[key]._id.toString() }).toArray();
                 }
 
                 return {
@@ -40,6 +41,7 @@ module.exports = [
                     message: 'OK',
                     statusCode: 200,
                 };
+
             } catch (error) {
                 return (Boom.badGateway(error));
             }

@@ -61,12 +61,12 @@ module.exports = [
             try {
                 const mongo = Util.getDb(req);
                 const params = req.params;
+                const find: any = { isUse: true, };
 
-                // Get info
                 if (params.id === '{id}') { delete params.id; }
-                const res = params.id
-                    ? await mongo.collection('users').findOne({ _id: mongoObjectId(params.id) })
-                    : await mongo.collection('users').find({ isUse: true }).toArray();
+                if (params.id) { find._id = mongoObjectId(params.id); }
+
+                const res =  await mongo.collection('users').find(find).toArray();
 
                 return ({
                     data: res,
@@ -106,7 +106,7 @@ module.exports = [
                     login.ts = Date.now();
                     login.refresh = Util.hash(login);
                     const token = JWT.sign(login, Util.jwtKey(), { expiresIn: config.token.timeout });
-                    const insert = await mongo.collection('token').insertOne({ token, refresh: login.refresh , method: 'login' });
+                    const insert = await mongo.collection('token').insertOne({ token, refresh: login.refresh, method: 'login' });
                     return ({
                         data: token,
                         message: 'Login success',
@@ -140,13 +140,13 @@ module.exports = [
                 const payload = req.payload;
                 const res = await mongo.collection('token').findOne({ refresh: payload.refresh });
 
-                if (!res) {return Boom.badRequest('Can not find Refresh Token'); }
+                if (!res) { return Boom.badRequest('Can not find Refresh Token'); }
 
                 // Decode JWT to get EXP
                 const decode = JWTDecode(res.token);
 
                 // Check EXP is Timeout/Time to refresh
-                if (!Util.tokenTimeout(decode.exp, config.token.preiousRefresh)) {return Boom.badRequest('Token was TIME OUT/NOT TIME TO REFRESH'); }
+                if (!Util.tokenTimeout(decode.exp, config.token.preiousRefresh)) { return Boom.badRequest('Token was TIME OUT/NOT TIME TO REFRESH'); }
 
                 // Create new refresh code
                 res.refresh = Util.hash(res);
@@ -164,7 +164,7 @@ module.exports = [
             }
         },
     },
-    {  // Delete Master
+    {  // Delete User
         method: 'DELETE',
         path: '/users/{id}',
         config: {
@@ -174,7 +174,7 @@ module.exports = [
             tags: ['api'],
             validate: {
                 params: {
-                    id: Joi.string().length(24).required().description('id category'),
+                    id: Joi.string().length(24).required().description('id user'),
                 },
             },
         },

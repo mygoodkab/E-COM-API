@@ -1,11 +1,15 @@
 
+import * as pathSep from 'path';
+import { upload } from './upload';
 const config = {
     path: {
         autoRoutes: [
             'dist',
             'routes',
             '*.js',
-        ]
+        ],
+        upload: pathSep.join(__dirname, 'upload'),
+        pdf: pathSep.join(__dirname, 'upload', 'document.pdf'),
     },
     mongodb: {
         port: '27017',

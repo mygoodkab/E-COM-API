@@ -33,10 +33,8 @@ module.exports = [
 
                 // GET category-log & parent
                 for (const key in res) {
-                    if (res.hasOwnProperty(key)) {
-                        res[key].categoryLog = await mongo.collection('category-log').find({ categoryId: res[key]._id.toString() }).toArray();
-                        if (res[key].categoryId) { res[key].parentCategory = await mongo.collection('category').findOne({ _id: mongoObjectId(res[key].categoryId) }); }
-                    }
+                    res[key].categoryLog = await mongo.collection('category-log').find({ categoryId: res[key]._id.toString() }).toArray();
+                    if (res[key].categoryId) { res[key].parentCategory = await mongo.collection('category').findOne({ _id: mongoObjectId(res[key].categoryId) }); }
                 }
 
                 return {

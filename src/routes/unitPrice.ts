@@ -23,15 +23,15 @@ module.exports = [
             try {
                 const mongo = Util.getDb(req);
                 const params = req.params;
+                const find: any = { isUse: true, };
 
-                // Get unitPrice Info & Log
-                let res;
                 if (params.id === '{id}') { delete params.id; }
-                if (params.id) {
-                    res = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(params.id) });
-                    res.unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res._id.toString() }).toArray();
-                } else {
-                    res = await mongo.collection('unitPrice').find({ isUse: true }).toArray();
+                if (params.id) { find._id = mongoObjectId(params.id); }
+
+                const res = await mongo.collection('unitPrice').find(find).toArray();
+
+                for (const key in res) {
+                        res[key].unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res[key]._id.toString() }).toArray();
                 }
 
                 return {

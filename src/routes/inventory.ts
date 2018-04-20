@@ -202,7 +202,6 @@ module.exports = [
 
                 // Loop from key in payload to check query string and assign value to find/sort/limit data
                 for (const key in payload) {
-                    if (payload.hasOwnProperty(key)) {
                         switch (key) {
                             case 'begin':
                             case 'end':
@@ -226,8 +225,6 @@ module.exports = [
                                 options.query[key] = payload[key];
                                 break;
                         }
-                    }
-
                 }
                 const inventoryLogs = await db.collection('inventory-log').find(options.query).sort(options.sort).limit(options.limit).toArray();
 
