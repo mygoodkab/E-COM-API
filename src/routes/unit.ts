@@ -33,7 +33,7 @@ module.exports = [
                 res = await mongo.collection('unit').find(find).toArray();
 
                 for (const key in res) {
-                        res[key].unitLog = await mongo.collection('unit-log').find({ unitId: res[key]._id.toString() }).toArray();
+                    if (params.id) { res[key].unitLog = await mongo.collection('unit-log').find({ unitId: res[key]._id.toString() }).toArray(); }
                 }
 
                 return {

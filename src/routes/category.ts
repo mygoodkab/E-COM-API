@@ -32,9 +32,11 @@ module.exports = [
                 const res = await mongo.collection('category').find(find).toArray();
 
                 // GET category-log & parent
+
                 for (const key in res) {
-                    res[key].categoryLog = await mongo.collection('category-log').find({ categoryId: res[key]._id.toString() }).toArray();
+                    if (params.id) { res[key].categoryLog = await mongo.collection('category-log').find({ categoryId: res[key]._id.toString() }).toArray(); }
                     if (res[key].categoryId) { res[key].parentCategory = await mongo.collection('category').findOne({ _id: mongoObjectId(res[key].categoryId) }); }
+
                 }
 
                 return {
@@ -73,7 +75,6 @@ module.exports = [
 
                 // Create Info & Insert Category
                 const insertInfo = Object.assign({}, payload);
-                delete insertInfo.userId;
                 insertInfo.crt = Date.now();
                 insertInfo.isUse = true;
                 const insert = await mongo.collection('category').insert(insertInfo);

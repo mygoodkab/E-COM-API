@@ -32,11 +32,11 @@ module.exports = [
                 const res = await mongo.collection('master').find(find).toArray();
 
                 for (const index in res) {
-                        // res[index].unitInfo = await mongo.collection('unit').findOne({ _id: mongoObjectId(res[index].unitId) });
-                        // res[index].unitPriceInfo = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(res[index].unitPriceId) });
-                        res[index].categoryInfo = await mongo.collection('category').findOne({ _id: mongoObjectId(res[index].categoryId) });
-                        res[index].userInfo = await mongo.collection('users').findOne({ _id: mongoObjectId(res[index].userId) });
-                        res[index].masterLog = await mongo.collection('master-log').find({ masterId: res[index]._id.toString() }).toArray();
+                    // res[index].unitInfo = await mongo.collection('unit').findOne({ _id: mongoObjectId(res[index].unitId) });
+                    // res[index].unitPriceInfo = await mongo.collection('unitPrice').findOne({ _id: mongoObjectId(res[index].unitPriceId) });
+                    res[index].categoryInfo = await mongo.collection('category').findOne({ _id: mongoObjectId(res[index].categoryId) });
+                    res[index].userInfo = await mongo.collection('users').findOne({ _id: mongoObjectId(res[index].userId) });
+                    if (params.id) { res[index].masterLog = await mongo.collection('master-log').find({ masterId: res[index]._id.toString() }).toArray(); }
                 }
 
                 return {
@@ -217,7 +217,7 @@ module.exports = [
         },
 
     },
-    {
+    { // Get Master Filter
         method: 'GET',
         path: '/master/filter',
         config: {
@@ -241,17 +241,17 @@ module.exports = [
                 const find: any = { isUse: true };
                 // Loop from key in payload to check query string and assign value to find/sort/limit data
                 for (const key in query) {
-                        switch (key) {
-                            case 'barcode':
-                                find.barcode = query.barcode;
-                                break;
-                            case 'masterId':
-                                find._id = mongoObjectId(query.masterId);
-                                break;
-                            default:
-                                find[key] = query[key];
-                                break;
-                        }
+                    switch (key) {
+                        case 'barcode':
+                            find.barcode = query.barcode;
+                            break;
+                        case 'masterId':
+                            find._id = mongoObjectId(query.masterId);
+                            break;
+                        default:
+                            find[key] = query[key];
+                            break;
+                    }
                 }
                 const inventoryLogs = await db.collection('master').find(find).toArray();
 

@@ -41,6 +41,10 @@ export class Util {
 		return fs.mkdirSync(path);
 	}
 
+	public static unlinkFile(path) {
+		return fs.unlinkSync(path);
+	}
+
 	public static tokenTimeout(end: number, condition: number) {
 		const now = Date.now();
 		let toString = end.toString();

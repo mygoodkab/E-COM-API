@@ -89,7 +89,37 @@ module.exports = [
                         });
                 }
             } catch (error) {
-                reply(Boom.badGateway(error));
+                return (Boom.badGateway(error));
+            }
+        },
+    },
+    {  // Delete image file
+        method: 'DELETE',
+        path: '/image/{id}',
+        config: {
+            auth: false,
+            tags: ['api'],
+            description: 'Get image for UI',
+            notes: 'Get image ',
+            validate: {
+                params: {
+                    id: Joi.string().required().description('id image'),
+                },
+            },
+        },
+        handler: async (request, reply) => {
+            try {
+                const mongo = Util.getDb(request);
+                const params = request.params;
+                const res = await mongo.collection('images').findOne({ _id: mongoObjectId(params.id) });
+                if (!res) { return Boom.badData('File not found (id)'); }
+                if (Util.unlinkFile(pathSep.join(config.path.upload, res.storeName))) { return Boom.badData('File not found'); }
+                return {
+                    statusCode: 200,
+                    massage: 'OK',
+                };
+            } catch (error) {
+                return (Boom.badGateway(error));
             }
         },
     },

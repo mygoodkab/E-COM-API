@@ -31,7 +31,7 @@ module.exports = [
                 const res = await mongo.collection('unitPrice').find(find).toArray();
 
                 for (const key in res) {
-                        res[key].unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res[key]._id.toString() }).toArray();
+                    if (params.id) { res[key].unitPriceLog = await mongo.collection('unitPrice-log').find({ unitPriceId: res[key]._id.toString() }).toArray(); }
                 }
 
                 return {
