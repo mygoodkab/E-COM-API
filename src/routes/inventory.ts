@@ -73,13 +73,11 @@ module.exports = [
                 const mongo = Util.getDb(req);
                 const payload = req.payload;
 
+
                 // Loop from Number of Barcode to import/export each item
                 for (const index in payload.metadata) {
                     if (payload.metadata.hasOwnProperty(index)) {
                         const resMaster = await mongo.collection('master').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
-                        const resInventory = await mongo.collection('inventory').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
-                        payload.metadata[index].inventoryId = resInventory._id.toString();
-
                         // Check is new barcode
                         if (!resMaster) {
                             return {
@@ -87,30 +85,38 @@ module.exports = [
                                 statusCode: 403,
                             };
                         }
-                        // Check Frist Import
-                        if (resInventory) {
-                            // If item is exsist will import/export
-                            (payload.method === 'import')
-                                ? await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
-                                    { $inc: { amountInStock: payload.metadata[index].amount } },
-                                    { $set: { mdt: Date.now() } })
-                                : await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
-                                    { $inc: { amountInStock: -payload.metadata[index].amount } },
-                                    { $set: { mdt: Date.now() } });
-                        } else {
-                            // If item is not exsist will insert
-                            const inventory = {
-                                amountInOrder: 0,
-                                amountInShipping: 0,
-                                amountInStock: payload.metadata[index].amount,
-                                crt: Date.now(),
-                                masterBarcode: resMaster.masterBarcode,
-                                masterId: resMaster._id,
-                            };
-                            const insertInventory = await mongo.collection('inventory').insert(inventory);
-                        }
                     }
                 }
+                // If can find all barcode
+                for (const index in payload.metadata) {
+                    const resMaster = await mongo.collection('master').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
+                    const resInventory = await mongo.collection('inventory').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
+                    payload.metadata[index].inventoryId = resInventory._id.toString();
+                    // Check Frist Import
+                    if (resInventory) {
+                        // If item is exsist will import/export
+                        (payload.method === 'import')
+                            ? await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
+                                { $inc: { amountInStock: payload.metadata[index].amount } },
+                                { $set: { mdt: Date.now() } })
+                            : await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
+                                { $inc: { amountInStock: -payload.metadata[index].amount } },
+                                { $set: { mdt: Date.now() } });
+                    } else {
+                        // If item is not exsist will insert
+                        const inventory = {
+                            amountInOrder: 0,
+                            amountInShipping: 0,
+                            amountInStock: payload.metadata[index].amount,
+                            crt: Date.now(),
+                            masterBarcode: resMaster.masterBarcode,
+                            masterId: resMaster._id,
+                        };
+                        const insertInventory = await mongo.collection('inventory').insert(inventory);
+                    }
+                }
+
+
                 // Create LOG
                 const log = Object.assign({}, payload);
                 log.crt = Date.now();
@@ -202,29 +208,29 @@ module.exports = [
 
                 // Loop from key in payload to check query string and assign value to find/sort/limit data
                 for (const key in payload) {
-                        switch (key) {
-                            case 'begin':
-                            case 'end':
-                                if (options.query.crt === undefined) {
-                                    options.query.crt = {};
-                                }
-                                options.query.crt = key === 'begin'
-                                    ? { $gte: payload[key] }
-                                    : { $lte: payload[key] };
-                                break;
-                            case 'sort':
-                                options.sort = { crt: payload[key] };
-                                break;
-                            case 'limit':
-                                options.limit = payload[key];
-                                break;
-                            case 'inventoryId':
-                                options.query.metadata = { $elemMatch: { inventoryId: payload.inventoryId } };
-                                break;
-                            default:
-                                options.query[key] = payload[key];
-                                break;
-                        }
+                    switch (key) {
+                        case 'begin':
+                        case 'end':
+                            if (options.query.crt === undefined) {
+                                options.query.crt = {};
+                            }
+                            options.query.crt = key === 'begin'
+                                ? { $gte: payload[key] }
+                                : { $lte: payload[key] };
+                            break;
+                        case 'sort':
+                            options.sort = { crt: payload[key] };
+                            break;
+                        case 'limit':
+                            options.limit = payload[key];
+                            break;
+                        case 'inventoryId':
+                            options.query.metadata = { $elemMatch: { inventoryId: payload.inventoryId } };
+                            break;
+                        default:
+                            options.query[key] = payload[key];
+                            break;
+                    }
                 }
                 const inventoryLogs = await db.collection('inventory-log').find(options.query).sort(options.sort).limit(options.limit).toArray();
 
