@@ -62,7 +62,7 @@ module.exports = [
                 payload: {
                     metadata: Joi.array().items([{
                         amount: Joi.number().min(1).max(100).integer().required().description('number of import/export item'),
-                        masterBarcode: Joi.string().regex(config.regex).required().description('barcode master'),
+                        barcode: Joi.string().regex(config.regex).required().description('barcode master'),
                     }]).required(),
                     method: Joi.string().valid(['import', 'export']).required().description('method to update inventory'),
                     userId: Joi.string().length(24).required().description('id user'),
@@ -73,11 +73,11 @@ module.exports = [
                 const mongo = Util.getDb(req);
                 const payload = req.payload;
 
-
                 // Loop from Number of Barcode to import/export each item
                 for (const index in payload.metadata) {
                     if (payload.metadata.hasOwnProperty(index)) {
-                        const resMaster = await mongo.collection('master').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
+                        const resMaster = await mongo.collection('master').findOne({ barcode: payload.metadata[index].barcode });
+                        const resInventory = await mongo.collection('inventory').findOne({ barcode: payload.metadata[index].barcode });
                         // Check is new barcode
                         if (!resMaster) {
                             return {
@@ -85,37 +85,51 @@ module.exports = [
                                 statusCode: 403,
                             };
                         }
+                        // if export amount less than inventory 
+                        if (payload.method === 'export') {
+                            if (resInventory.amountInStock - payload.metadata[index].amount < 0) {
+                                return {
+                                    message: `Export Error : Product Barcode ${payload.metadata[index].masterBarcod} is less than inventory`,
+                                    statusCode: 403,
+                                };
+                            }
+                        }
                     }
                 }
                 // If can find all barcode
                 for (const index in payload.metadata) {
-                    const resMaster = await mongo.collection('master').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
-                    const resInventory = await mongo.collection('inventory').findOne({ masterBarcode: payload.metadata[index].masterBarcode });
-                    payload.metadata[index].inventoryId = resInventory._id.toString();
-                    // Check Frist Import
-                    if (resInventory) {
-                        // If item is exsist will import/export
-                        (payload.method === 'import')
-                            ? await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
+                    const resMaster = await mongo.collection('master').findOne({ barcode: payload.metadata[index].barcode });
+                    const resInventory = await mongo.collection('inventory').findOne({ barcode: payload.metadata[index].barcode });
+
+
+                    // If item is exsist will import/export
+                    if (payload.method === 'import') {
+
+                        // If item is not exsist will insert
+                        if (resInventory) {
+                            payload.metadata[index].inventoryId = resInventory._id.toString();
+                            await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
                                 { $inc: { amountInStock: payload.metadata[index].amount } },
                                 { $set: { mdt: Date.now() } })
-                            : await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
-                                { $inc: { amountInStock: -payload.metadata[index].amount } },
-                                { $set: { mdt: Date.now() } });
+                        } else {
+                            const inventory = {
+                                amountInOrder: 0,
+                                amountInShipping: 0,
+                                amountInStock: payload.metadata[index].amount,
+                                crt: Date.now(),
+                                barcode: resMaster.barcode,
+                                masterId: resMaster._id,
+                            };
+                            const insertInventory = await mongo.collection('inventory').insert(inventory);
+
+                        }
+
                     } else {
-                        // If item is not exsist will insert
-                        const inventory = {
-                            amountInOrder: 0,
-                            amountInShipping: 0,
-                            amountInStock: payload.metadata[index].amount,
-                            crt: Date.now(),
-                            masterBarcode: resMaster.masterBarcode,
-                            masterId: resMaster._id,
-                        };
-                        const insertInventory = await mongo.collection('inventory').insert(inventory);
+                        await mongo.collection('inventory').update({ _id: mongoObjectId(resInventory._id) },
+                            { $inc: { amountInStock: -payload.metadata[index].amount } },
+                            { $set: { mdt: Date.now() } });
                     }
                 }
-
 
                 // Create LOG
                 const log = Object.assign({}, payload);
